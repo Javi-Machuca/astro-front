@@ -13,6 +13,7 @@ Aplicación web de gestión y reserva de vuelos desarrollada con **Astro 5** (SS
 5. [Instalación del proyecto web](#5-instalación-del-proyecto-web)
 6. [Arranque en desarrollo](#6-arranque-en-desarrollo)
 7. [Estructura del proyecto](#7-estructura-del-proyecto)
+8. [Arquitectura MVC](#8-arquitectura-mvc)
 
 ---
 
@@ -50,7 +51,7 @@ iwr https://get.pnpm.io/install.ps1 -useb | iex
 ### 2.1 Cuenta SAP BTP Trial
 
 1. Regístrate en [SAP BTP Trial](https://account.hanatrial.ondemand.com) si no tienes cuenta.
-2. En el **SAP BTP Cockpit**, accede a tu subacuenta trial.
+2. En el **SAP BTP Cockpit**, accede a tu subcuenta trial.
 3. En **Instances and Subscriptions**, comprueba que tienes una instancia del servicio **ABAP Trial** activa.
 4. Anota la **API Endpoint** de tu instancia ABAP (formato `https://<tenant>.abap.us10.hana.ondemand.com`).
 
@@ -192,53 +193,109 @@ Al arrancar por primera vez, se crea automáticamente un usuario administrador:
 
 ```
 astro-front/
-├── proxy/                  # Proxy Express.js → SAP BTP OData v2
+├── proxy/                      # Proxy Express.js → SAP BTP OData v2
 │   └── sap-proxy.js
 ├── src/
-│   ├── components/         # Componentes Astro reutilizables
+│   ├── components/             # Componentes Astro reutilizables (Vista)
 │   │   ├── TablaVuelos.astro
 │   │   ├── FormularioReserva.astro
-│   │   ├── Carrito.astro
 │   │   └── PopupConfirmacion.astro
-│   ├── controllers/        # Lógica de estado del cliente
+│   ├── controllers/            # Controladores MVC (Controlador)
 │   │   └── VuelosController.ts
 │   ├── layouts/
 │   │   └── Layout.astro
-│   ├── lib/                # Utilidades del servidor
-│   │   └── auth.ts         # JWT + bcrypt + gestión de usuarios
-│   ├── middleware/         # Protección de rutas
+│   ├── lib/                    # Lógica de negocio del servidor (Modelo)
+│   │   ├── auth.ts             # JWT + bcrypt + gestión de usuarios
+│   │   ├── reservas.ts         # Gestión de reservas locales
+│   │   └── aeropuertos.ts      # Tabla de códigos IATA
+│   ├── middleware/             # Protección de rutas por rol
 │   │   └── index.ts
-│   ├── models/             # Tipos TypeScript
+│   ├── models/                 # Interfaces y utilidades de dominio (Modelo)
 │   │   └── Vuelo.ts
 │   ├── pages/
-│   │   ├── api/            # API routes de autenticación
-│   │   ├── admin/          # Panel de administración (solo rol admin)
-│   │   ├── vuelos/         # Detalle de vuelo y reserva
-│   │   ├── index.astro     # Listado principal de vuelos
-│   │   ├── carrito.astro
+│   │   ├── api/                # Endpoints REST (Controlador servidor)
+│   │   │   ├── auth/           # Login, logout, registro
+│   │   │   ├── reservas/       # Crear y cancelar reservas
+│   │   │   └── admin/          # Gestión de usuarios (solo admin)
+│   │   ├── admin/              # Panel de administración (Vista)
+│   │   │   ├── index.astro     # Gestión de vuelos SAP
+│   │   │   └── usuarios.astro  # Gestión de usuarios
+│   │   ├── vuelos/
+│   │   │   └── detalle.astro   # Detalle y reserva de un vuelo
+│   │   ├── index.astro         # Listado principal de vuelos
+│   │   ├── carrito.astro       # Carrito de reservas
+│   │   ├── mis-reservas.astro  # Historial de reservas del usuario
 │   │   ├── login.astro
 │   │   └── registro.astro
-│   └── services/           # Llamadas al proxy SAP
+│   └── services/               # Llamadas al proxy SAP (Modelo)
 │       └── VuelosService.ts
 ├── data/
-│   └── users.json          # Almacén de usuarios (generado automáticamente)
-├── .env                    # Variables de entorno (no incluido en git)
+│   ├── users.json              # Usuarios (generado automáticamente)
+│   └── reservas.json           # Reservas confirmadas
+├── .env                        # Variables de entorno (no incluido en git)
 └── astro.config.mjs
 ```
+
+---
+
+## 8. Arquitectura MVC
+
+El proyecto sigue el patrón **Modelo-Vista-Controlador**:
+
+### Modelo
+Contiene los datos y la lógica de negocio, sin conocer la vista ni el controlador.
+
+| Archivo | Responsabilidad |
+|---|---|
+| `src/models/Vuelo.ts` | Interfaces de dominio, descuentos por edad, formateo de fechas y precios |
+| `src/lib/auth.ts` | Gestión de usuarios, JWT, bcrypt |
+| `src/lib/reservas.ts` | Persistencia de reservas |
+| `src/lib/aeropuertos.ts` | Tabla de códigos IATA |
+| `src/services/VuelosService.ts` | Comunicación con el proxy SAP |
+
+### Vista
+Renderiza la interfaz sin contener lógica de negocio.
+
+| Archivo | Responsabilidad |
+|---|---|
+| `src/components/TablaVuelos.astro` | Tabla de vuelos con filtros y paginación |
+| `src/components/FormularioReserva.astro` | Formulario de reserva por pasos |
+| `src/components/PopupConfirmacion.astro` | Popup de confirmación de reserva |
+| `src/layouts/Layout.astro` | Plantilla base con navegación |
+| `src/pages/index.astro` | Página principal de vuelos |
+| `src/pages/carrito.astro` | Carrito de reservas |
+| `src/pages/mis-reservas.astro` | Historial del usuario |
+| `src/pages/login.astro` | Formulario de inicio de sesión |
+| `src/pages/registro.astro` | Formulario de registro |
+| `src/pages/vuelos/detalle.astro` | Detalle y reserva de un vuelo |
+| `src/pages/admin/index.astro` | Gestión de vuelos SAP |
+| `src/pages/admin/usuarios.astro` | Gestión de usuarios |
+
+### Controlador
+Gestiona el estado, coordina modelo y vista y responde a las acciones del usuario.
+
+| Archivo | Responsabilidad |
+|---|---|
+| `src/controllers/VuelosController.ts` | Estado de la tabla, filtrado, paginación, patrón Observer |
+| `src/pages/api/auth/*.ts` | Login, logout, registro |
+| `src/pages/api/reservas/*.ts` | Crear y cancelar reservas |
+| `src/pages/api/admin/*.ts` | Operaciones de administración |
+| `src/middleware/index.ts` | Control de acceso por rol en cada ruta |
 
 ### Flujo de datos
 
 ```
 Navegador
   └─► Astro SSR (4321)
-        ├─► /api/auth/*        → gestión de sesión JWT (cookie httpOnly)
-        └─► /admin, /vuelos/*  → páginas protegidas por middleware
+        ├─► /api/auth/*         → gestión de sesión JWT (cookie httpOnly)
+        ├─► /api/reservas/*     → crear y cancelar reservas
+        └─► /admin, /vuelos/*   → páginas protegidas por middleware
 
 Navegador (cliente)
   └─► Proxy Express (3001)
         └─► SAP BTP ABAP OData v2
-              ├─ GET  /api/vuelos          → listado con filtros
-              ├─ GET  /api/vuelos/:codigo  → detalle
-              ├─ PATCH /api/vuelos/:id     → editar vuelo (admin)
-              └─ POST  /api/reservas       → crear reserva
+              ├─ GET   /api/vuelos           → listado con filtros
+              ├─ GET   /api/vuelos/:codigo   → detalle de vuelo
+              ├─ POST  /api/vuelos           → crear vuelo (admin)
+              └─ PATCH /api/vuelos/:id       → editar vuelo (admin)
 ```
