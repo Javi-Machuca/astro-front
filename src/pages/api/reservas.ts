@@ -53,39 +53,46 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const creadas: string[] = [];
 
-  for (const item of items) {
-    for (const pasajero of item.pasajeros) {
-      const res = await fetch(`${PROXY_URL}/api/reservas`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${API_TOKEN}`,
-        },
-        body: JSON.stringify({
-          vueloId: item.vuelo.vueloId,
-          nombre: pasajero.nombre,
-          dni: pasajero.dni,
-          edad: String(pasajero.edad),
-        }),
-      });
+  try {
+    for (const item of items) {
+      for (const pasajero of item.pasajeros) {
+        const res = await fetch(`${PROXY_URL}/api/reservas`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${API_TOKEN}`,
+          },
+          body: JSON.stringify({
+            vueloId: item.vuelo.vueloId,
+            nombre: pasajero.nombre,
+            dni: pasajero.dni,
+            edad: String(pasajero.edad),
+          }),
+        });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        return new Response(
-          JSON.stringify({ ok: false, error: (err as any).error || `SAP HTTP ${res.status}` }),
-          { status: 502 }
-        );
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return new Response(
+            JSON.stringify({ ok: false, error: (err as any).error || `SAP HTTP ${res.status}` }),
+            { status: 502 }
+          );
+        }
       }
-    }
 
-    const reserva = createReserva(
-      user.sub,
-      user.email,
-      item.vuelo,
-      item.pasajeros,
-      item.total
+      const reserva = createReserva(
+        user.sub,
+        user.email,
+        item.vuelo,
+        item.pasajeros,
+        item.total
+      );
+      creadas.push(reserva.id);
+    }
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ ok: false, error: 'No se pudo conectar con el proxy SAP. Comprueba que está activo.' }),
+      { status: 502 }
     );
-    creadas.push(reserva.id);
   }
 
   return new Response(JSON.stringify({ ok: true, ids: creadas }), {

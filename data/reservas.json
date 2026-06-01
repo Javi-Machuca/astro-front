@@ -25,6 +25,34 @@
       }
     ],
     "total": 62.99999999999999,
-    "estado": "confirmada"
+    "estado": "cancelada"
+  },
+  {
+    "id": "ebe74980-81a8-4fbb-8ba1-7e25ae8fd6f5",
+    "userId": "5a0be42d-f19c-48fa-88e2-26423a8faaa7",
+    "userEmail": "prueba@correo.com",
+    "fecha": "2026-06-01T13:51:42.438Z",
+    "vuelo": {
+      "vueloId": "5",
+      "codigoVuelo": "UX3001",
+      "origen": "MAD",
+      "destino": "LPA",
+      "fechaSalida": "2026-05-22T00:00:00.000Z",
+      "fechaLlegada": "2026-05-22T00:00:00.000Z",
+      "horaLlegada": "PT11H30M00S",
+      "precio": 120,
+      "moneda": "EUR",
+      "plazasDisponibles": 200,
+      "estado": "Programado"
+    },
+    "pasajeros": [
+      {
+        "nombre": "Jose Garcia",
+        "dni": "2342342E",
+        "edad": 2
+      }
+    ],
+    "total": 84,
+    "estado": "cancelada"
   }
 ]
