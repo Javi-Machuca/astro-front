@@ -1,0 +1,251 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout titulo="Crear cuenta – Gestora de Vuelos" showNav={false}>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="brand">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          width="32"
+          height="32"
+        >
+          <path
+            d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"
+          ></path>
+        </svg>
+        <span>Gestora de Vuelos</span>
+      </div>
+
+      <h1>Crear cuenta</h1>
+      <p class="subtitle">Rellena los datos para registrarte</p>
+
+      <div id="error-msg" class="error-msg" style="display:none"></div>
+
+      <form id="register-form">
+        <div class="field">
+          <label for="name">Nombre completo</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            placeholder="Juan García"
+            required
+            autocomplete="name"
+          />
+        </div>
+        <div class="field">
+          <label for="email">Correo electrónico</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="tu@correo.com"
+            required
+            autocomplete="email"
+          />
+        </div>
+        <div class="field">
+          <label for="password"
+            >Contraseña <span class="hint">(mín. 6 caracteres)</span></label
+          >
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="••••••••"
+            required
+            autocomplete="new-password"
+            minlength="6"
+          />
+        </div>
+        <button type="submit" id="submit-btn" class="btn-primary">
+          <span id="btn-text">Registrarse</span>
+          <span id="btn-spinner" style="display:none">Creando cuenta…</span>
+        </button>
+      </form>
+
+      <p class="switch-link">
+        ¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>
+      </p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const form = document.getElementById('register-form') as HTMLFormElement;
+  const errorMsg = document.getElementById('error-msg') as HTMLDivElement;
+  const btnText = document.getElementById('btn-text') as HTMLSpanElement;
+  const btnSpinner = document.getElementById('btn-spinner') as HTMLSpanElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = 'none';
+    btnText.style.display = 'none';
+    btnSpinner.style.display = 'inline';
+    submitBtn.disabled = true;
+
+    const name = (document.getElementById('name') as HTMLInputElement).value;
+    const email = (document.getElementById('email') as HTMLInputElement).value;
+    const password = (document.getElementById('password') as HTMLInputElement)
+      .value;
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        window.location.href = '/';
+      } else {
+        errorMsg.textContent = data.error;
+        errorMsg.style.display = 'block';
+      }
+    } catch {
+      errorMsg.textContent = 'Error de conexión. Inténtalo de nuevo.';
+      errorMsg.style.display = 'block';
+    } finally {
+      btnText.style.display = 'inline';
+      btnSpinner.style.display = 'none';
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+
+<style>
+  .auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--fondo);
+    padding: 1.5rem;
+  }
+
+  .auth-card {
+    background: var(--fondo-card);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--primario);
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.4rem;
+  }
+
+  .subtitle {
+    color: var(--texto-sec);
+    font-size: 0.9rem;
+    margin-bottom: 1.8rem;
+  }
+
+  .error-msg {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .field {
+    margin-bottom: 1.2rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.4rem;
+  }
+
+  .hint {
+    font-weight: 400;
+    color: var(--texto-sec);
+  }
+
+  input {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #fff;
+    color: #1e293b;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: var(--primario);
+    box-shadow: 0 0 0 3px rgba(26, 46, 90, 0.1);
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--primario);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition:
+      background 0.15s,
+      opacity 0.15s;
+  }
+
+  .btn-primary:hover {
+    background: #243d7a;
+  }
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .switch-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--texto-sec);
+  }
+
+  .switch-link a {
+    color: var(--primario);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .switch-link a:hover {
+    text-decoration: underline;
+  }
+</style>

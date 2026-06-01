@@ -1,0 +1,129 @@
+---
+
+---
+
+<div id="popup-confirmacion" style="display:none">
+  <div class="popup">
+    <div class="popup-icono">
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#166534"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <path d="M22 4 12 14.01l-3-3"></path>
+      </svg>
+    </div>
+    <h2>¡Reserva confirmada!</h2>
+    <p>
+      Tu reserva se ha procesado correctamente. Recibirás la confirmación por
+      email.
+    </p>
+    <div class="popup-acciones">
+      <a href="/mis-reservas" class="btn-mis-reservas">Ver mis reservas</a>
+      <button class="btn-cerrar-popup" id="btn-cerrar-popup"
+        >Volver a vuelos</button
+      >
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('btn-cerrar-popup')!.addEventListener('click', () => {
+    document.getElementById('popup-confirmacion')!.style.display = 'none';
+    window.location.href = '/';
+  });
+</script>
+
+<style>
+  #popup-confirmacion {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .popup {
+    background: #fff;
+    border-radius: 16px;
+    padding: 3rem 2.5rem;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .popup-icono {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    background: #dcfce7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .popup h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+  .popup p {
+    color: var(--texto-sec);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .popup-acciones {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .btn-mis-reservas {
+    padding: 0.75rem 2rem;
+    background: var(--primario);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: opacity 0.15s;
+    display: block;
+  }
+  .btn-mis-reservas:hover {
+    opacity: 0.85;
+  }
+
+  .btn-cerrar-popup {
+    padding: 0.75rem 2rem;
+    background: transparent;
+    color: var(--texto-sec);
+    border: 1.5px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+  }
+  .btn-cerrar-popup:hover {
+    background: #f1f5f9;
+  }
+</style>

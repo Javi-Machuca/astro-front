@@ -1,0 +1,967 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import FormularioReserva from '../../components/FormularioReserva.astro';
+---
+
+<Layout titulo="Detalle de vuelo – Hub Global">
+  <div class="pag">
+    <div class="nav-bar">
+      <a href="/" class="btn-volver">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M19 12H5M12 5l-7 7 7 7"></path>
+        </svg>
+        Volver a vuelos
+      </a>
+      <a href="/carrito" class="nav-carrito" aria-label="Ver carrito">
+        <svg
+          width="21"
+          height="21"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"
+          ></circle>
+          <path
+            d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+          ></path>
+        </svg>
+        <span id="fab-badge" class="fab-badge" style="display:none">0</span>
+      </a>
+    </div>
+
+    <!-- Skeleton -->
+    <div id="sk" class="layout-grid">
+      <div class="col-main">
+        <div class="sk-card">
+          <div class="sk sk-hero"></div>
+          <div class="sk-pad">
+            <div class="sk-row4">
+              <div class="sk sk-campo"></div><div class="sk sk-campo"></div>
+              <div class="sk sk-campo"></div><div class="sk sk-campo"></div>
+            </div>
+            <div class="sk sk-campo" style="margin-top:1.5rem"></div>
+            <div class="sk sk-campo" style="width:60%"></div>
+          </div>
+        </div>
+        <div class="sk-row2">
+          <div class="sk sk-amen"></div>
+          <div class="sk sk-amen"></div>
+        </div>
+      </div>
+      <div class="col-sidebar">
+        <div class="sk-card sk-pad">
+          <div class="sk sk-campo" style="width:50%;margin-bottom:1.25rem">
+          </div>
+          <div class="sk sk-campo"></div>
+          <div class="sk sk-campo"></div>
+          <div class="sk sk-campo"></div>
+          <div class="sk sk-btn" style="margin-top:1rem"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <p id="error-root" class="error-msg" style="display:none"></p>
+
+    <!-- Contenido principal -->
+    <div id="contenido" class="layout-grid" style="display:none">
+      <!-- ── Columna principal ── -->
+      <div class="col-main">
+        <!-- Tarjeta vuelo -->
+        <div class="vuelo-card">
+          <!-- Hero azul -->
+          <div class="card-hero">
+            <div class="deco deco-a"></div>
+            <div class="deco deco-b"></div>
+
+            <p class="hero-label">Hub Global Logistics &bull; Vuelo Directo</p>
+
+            <div class="hero-ruta">
+              <span id="d-origen" class="iata">—</span>
+              <svg
+                width="44"
+                height="22"
+                viewBox="0 0 44 22"
+                fill="none"
+                style="flex-shrink:0"
+              >
+                <path
+                  d="M2 11h40M32 3l10 8-10 8"
+                  stroke="rgba(255,255,255,.45)"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+              </svg>
+              <span id="d-destino" class="iata">—</span>
+            </div>
+
+            <p id="d-sub" class="hero-sub"></p>
+
+            <div class="hero-foot">
+              <span id="d-estado" class="badge-estado">—</span>
+            </div>
+          </div>
+
+          <!-- Cuerpo -->
+          <div class="card-body">
+            <h2 class="sec-titulo">Detalles del vuelo</h2>
+
+            <div class="det-grid">
+              <div class="d-campo">
+                <span class="campo-lbl">Código de vuelo</span>
+                <span id="d-codigo" class="campo-val">—</span>
+              </div>
+              <div class="d-campo">
+                <span class="campo-lbl">Asientos disponibles</span>
+                <span id="d-plazas" class="campo-val">—</span>
+              </div>
+              <div class="d-campo">
+                <span class="campo-lbl">Operador</span>
+                <span id="d-operador" class="campo-val">—</span>
+              </div>
+              <div class="d-campo">
+                <span class="campo-lbl">Tipo de cabina</span>
+                <span id="d-cabina" class="campo-val">—</span>
+              </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="tl-wrap">
+              <div class="tl-dot-col">
+                <div class="dot-hueco"></div>
+                <div class="dot-linea"></div>
+              </div>
+              <div class="tl-info">
+                <span class="campo-lbl">Origen</span>
+                <span id="d-origen-full" class="tl-ciudad">—</span>
+                <span id="d-fecha-salida" class="tl-fecha">—</span>
+              </div>
+              <div class="tl-spacer"></div>
+              <div class="tl-dot-col tl-dot-dest">
+                <div class="dot-lleno"></div>
+              </div>
+              <div class="tl-info">
+                <span class="campo-lbl">Destino</span>
+                <span id="d-destino-full" class="tl-ciudad">—</span>
+                <span id="d-fecha-llegada" class="tl-fecha">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Amenidades (inyectadas dinámicamente) -->
+        <div id="d-amenidades" class="amen-grid"></div>
+      </div>
+
+      <!-- ── Sidebar ── -->
+      <div class="col-sidebar">
+        <div class="sidebar-card">
+          <h3 class="sidebar-titulo">Resumen de reserva</h3>
+
+          <div class="precio-lista">
+            <div class="precio-fila">
+              <span class="precio-lbl">Tarifa base (1 pax)</span>
+              <span id="d-precio-base" class="precio-val">—</span>
+            </div>
+            <div class="precio-fila">
+              <span class="precio-lbl">Tasas e impuestos</span>
+              <span class="precio-val">Incluidos</span>
+            </div>
+            <div class="precio-fila precio-total-fila">
+              <span class="precio-total-lbl">Total</span>
+              <span id="d-total" class="precio-total-num">—</span>
+            </div>
+          </div>
+
+          <button id="btn-abrir-formulario" class="btn-reservar">
+            Reservar vuelo
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7"></path>
+            </svg>
+          </button>
+
+          <p class="sidebar-nota">
+            Cancelación gratuita hasta 24 h antes del despegue.
+          </p>
+
+          <div id="d-aviso" class="sidebar-aviso" style="display:none">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="flex-shrink:0;margin-top:1px"
+            >
+              <circle cx="12" cy="12" r="10"></circle><line
+                x1="12"
+                y1="8"
+                x2="12"
+                y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Quedan pocas plazas disponibles para esta tarifa.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <FormularioReserva />
+  </div>
+</Layout>
+
+<script>
+  import { obtenerVuelosMock } from '../../services/VuelosService';
+  import { formatearFecha, formatearPrecio } from '../../models/Vuelo';
+  import type { Vuelo } from '../../models/Vuelo';
+  import { AEROPUERTOS } from '../../lib/aeropuertos';
+
+  const USE_MOCK = import.meta.env.PUBLIC_USE_MOCK === 'true';
+  const PROXY_URL = import.meta.env.PUBLIC_PROXY_URL || 'http://localhost:3001';
+  // El código de vuelo viene como query param (?codigo=IB1001)
+  const codigo =
+    new URLSearchParams(window.location.search).get('codigo') ?? '';
+
+  interface Extra {
+    operador: string;
+    cabina: string;
+    amenidades: { icono: string; titulo: string; desc: string }[];
+  }
+
+  const SVGS: Record<string, string> = {
+    wifi: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>`,
+    food: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
+    bag: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`,
+    seat: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
+    usb: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+    star: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  };
+
+  // Datos estáticos de operador, cabina y amenidades por código de vuelo
+  const EXTRAS: Record<string, Extra> = {
+    IB1001: {
+      operador: 'Iberia Fleet',
+      cabina: 'Economy Plus',
+      amenidades: [
+        {
+          icono: 'wifi',
+          titulo: 'Wi-Fi a bordo',
+          desc: 'Conexión de alta velocidad para todos los pasajeros.',
+        },
+        {
+          icono: 'food',
+          titulo: 'Servicio de catering',
+          desc: 'Menú ejecutivo con opciones saludables incluido.',
+        },
+      ],
+    },
+    IB1002: {
+      operador: 'Iberia Fleet',
+      cabina: 'Estándar Corporate',
+      amenidades: [
+        {
+          icono: 'wifi',
+          titulo: 'Wi-Fi a bordo',
+          desc: 'Conexión disponible durante todo el trayecto.',
+        },
+        {
+          icono: 'seat',
+          titulo: 'Prioridad de embarque',
+          desc: 'Acceso prioritario para viajeros corporativos.',
+        },
+      ],
+    },
+    VY2001: {
+      operador: 'Vueling Corp',
+      cabina: 'Business Lite',
+      amenidades: [
+        {
+          icono: 'bag',
+          titulo: 'Equipaje incluido',
+          desc: '23 kg facturados sin coste adicional.',
+        },
+        {
+          icono: 'usb',
+          titulo: 'Carga USB / 220 V',
+          desc: 'Tomas de corriente en todos los asientos.',
+        },
+      ],
+    },
+    VY2002: {
+      operador: 'Vueling Corp',
+      cabina: 'Economy Select',
+      amenidades: [
+        {
+          icono: 'bag',
+          titulo: 'Equipaje incluido',
+          desc: '23 kg facturados incluidos en tarifa.',
+        },
+        {
+          icono: 'food',
+          titulo: 'Snack de bienvenida',
+          desc: 'Selección de aperitivos ligeros durante el vuelo.',
+        },
+      ],
+    },
+    UX3001: {
+      operador: 'Air Europa Ops',
+      cabina: 'Turista Plus',
+      amenidades: [
+        {
+          icono: 'star',
+          titulo: 'Asiento seleccionable',
+          desc: 'Elige tu asiento preferido sin coste extra.',
+        },
+        {
+          icono: 'wifi',
+          titulo: 'Entretenimiento HD',
+          desc: 'Pantalla individual con películas y música.',
+        },
+      ],
+    },
+  };
+  const DEFAULT_EXTRA: Extra = {
+    operador: 'Hub Global Fleet',
+    cabina: 'Estándar',
+    amenidades: [
+      {
+        icono: 'wifi',
+        titulo: 'Wi-Fi a bordo',
+        desc: 'Conexión disponible durante el vuelo.',
+      },
+      {
+        icono: 'bag',
+        titulo: 'Equipaje de mano',
+        desc: 'Equipaje de cabina incluido sin coste adicional.',
+      },
+    ],
+  };
+
+  // Devuelve "Nombre completo (IATA)" o solo el código si no está mapeado
+  const nombreAeropuerto = (iata: string) =>
+    AEROPUERTOS[iata] ? `${AEROPUERTOS[iata]} (${iata})` : iata;
+
+  // Utilidad para actualizar el texto de un elemento por ID sin boilerplate
+  function set(id: string, val: string) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  // Obtiene el vuelo del proxy o del mock según la variable de entorno
+  async function cargarVuelo(): Promise<Vuelo | null> {
+    if (!codigo) return null;
+    if (USE_MOCK)
+      return obtenerVuelosMock().find((v) => v.codigoVuelo === codigo) || null;
+    const res = await fetch(`${PROXY_URL}/api/vuelos/${codigo}`);
+    const json = await res.json();
+    return json.data;
+  }
+
+  // Carga el vuelo y construye la página; oculta el skeleton al terminar
+  cargarVuelo().then((v) => {
+    document.getElementById('sk')!.style.display = 'none';
+
+    if (!v) {
+      const err = document.getElementById('error-root')!;
+      err.textContent = `No se encontró el vuelo "${codigo || '(sin código)'}".`;
+      err.style.display = 'block';
+      return;
+    }
+
+    const extra = EXTRAS[v.codigoVuelo] || DEFAULT_EXTRA;
+
+    // Hero
+    set('d-origen', v.origen);
+    set('d-destino', v.destino);
+    set(
+      'd-sub',
+      `${nombreAeropuerto(v.origen)} → ${nombreAeropuerto(v.destino)}`
+    );
+
+    const estadoEl = document.getElementById('d-estado')!;
+    estadoEl.textContent = v.estado;
+    estadoEl.className =
+      'badge-estado ' +
+      (v.estado === 'DISPONIBLE'
+        ? 'b-disp'
+        : v.estado === 'COMPLETO'
+          ? 'b-comp'
+          : 'b-canc');
+
+    // Detalles
+    set('d-codigo', v.codigoVuelo);
+    set('d-plazas', `${v.plazasDisponibles} plazas`);
+    set('d-operador', extra.operador);
+    set('d-cabina', extra.cabina);
+
+    // Timeline
+    set('d-origen-full', nombreAeropuerto(v.origen));
+    set('d-fecha-salida', formatearFecha(v.fechaSalida));
+    set('d-destino-full', nombreAeropuerto(v.destino));
+    set(
+      'd-fecha-llegada',
+      `${formatearFecha(v.fechaLlegada)} · ${v.horaLlegada}`
+    );
+
+    // Sidebar precios
+    const precioStr = `${formatearPrecio(v.precio)} ${v.moneda}`;
+    set('d-precio-base', precioStr);
+    set('d-total', precioStr);
+
+    // Aviso pocas plazas
+    if (v.plazasDisponibles < 30) {
+      document.getElementById('d-aviso')!.style.display = 'flex';
+    }
+
+    // Amenidades
+    const amenGrid = document.getElementById('d-amenidades')!;
+    amenGrid.innerHTML = extra.amenidades
+      .map(
+        (a) => `
+      <div class="amen-card">
+        <span class="amen-icono">${SVGS[a.icono] ?? SVGS.star}</span>
+        <div>
+          <p class="amen-titulo">${a.titulo}</p>
+          <p class="amen-desc">${a.desc}</p>
+        </div>
+      </div>
+    `
+      )
+      .join('');
+
+    // Mostrar contenido
+    document.getElementById('contenido')!.style.display = 'grid';
+
+    // Botón reservar
+    document
+      .getElementById('btn-abrir-formulario')!
+      .addEventListener('click', () => {
+        sessionStorage.setItem('vuelo-reserva', JSON.stringify(v));
+        document.getElementById('formulario-overlay')!.style.display = 'flex';
+      });
+  });
+
+  // Actualiza el badge del carrito en la barra de navegación local de esta página
+  const fabBadge = document.getElementById('fab-badge')!;
+  function actualizarFabBadge() {
+    const n = JSON.parse(localStorage.getItem('carrito') || '[]').length;
+    fabBadge.textContent = String(n);
+    fabBadge.style.display = n > 0 ? 'flex' : 'none';
+  }
+  actualizarFabBadge();
+  window.addEventListener('storage', actualizarFabBadge);
+</script>
+
+<style is:global>
+  /* ── Layout ── */
+  .pag {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem 2.5rem 4rem;
+  }
+
+  .btn-volver {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primario);
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .btn-volver:hover {
+    opacity: 0.65;
+  }
+
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .col-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .col-sidebar {
+    position: sticky;
+    top: 1.5rem;
+  }
+
+  /* ── Vuelo card ── */
+  .vuelo-card {
+    background: #fff;
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  }
+
+  /* Hero */
+  .card-hero {
+    background: var(--primario);
+    padding: 2rem 2rem 1.6rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .deco {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    filter: blur(36px);
+    pointer-events: none;
+  }
+  .deco-a {
+    width: 240px;
+    height: 240px;
+    top: -70px;
+    right: -70px;
+  }
+  .deco-b {
+    width: 180px;
+    height: 180px;
+    bottom: -55px;
+    left: -50px;
+  }
+
+  .hero-label {
+    position: relative;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.65);
+    margin-bottom: 0.6rem;
+  }
+  .hero-ruta {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.45rem;
+  }
+  .iata {
+    font-size: 3.2rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: #fff;
+    line-height: 1;
+  }
+  .hero-sub {
+    position: relative;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.72);
+    margin-bottom: 1.1rem;
+  }
+  .hero-foot {
+    position: relative;
+  }
+
+  .badge-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  .b-disp {
+    background: rgba(220, 252, 231, 0.2);
+    color: #86efac;
+    border: 1px solid rgba(134, 239, 172, 0.35);
+  }
+  .b-comp {
+    background: rgba(254, 226, 226, 0.2);
+    color: #fca5a5;
+    border: 1px solid rgba(252, 165, 165, 0.35);
+  }
+  .b-canc {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+  }
+
+  /* Body */
+  .card-body {
+    padding: 1.75rem 2rem 2rem;
+  }
+
+  .sec-titulo {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primario);
+    margin-bottom: 1.25rem;
+  }
+
+  .det-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem 1rem;
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--borde);
+    margin-bottom: 1.75rem;
+  }
+  .d-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .campo-lbl {
+    font-size: 0.67rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-sec);
+  }
+  .campo-val {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  /* Timeline */
+  .tl-wrap {
+    display: grid;
+    grid-template-columns: 20px 1fr 2rem 20px 1fr;
+    align-items: start;
+    column-gap: 0;
+  }
+  .tl-dot-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 1rem;
+  }
+  .tl-dot-dest {
+    padding-top: 1rem;
+  }
+  .dot-hueco {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 2.5px solid var(--primario);
+    background: #fff;
+    flex-shrink: 0;
+  }
+  .dot-linea {
+    width: 2px;
+    height: 38px;
+    background: var(--borde);
+    margin-top: 4px;
+  }
+  .dot-lleno {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--primario);
+    flex-shrink: 0;
+  }
+  .tl-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.22rem;
+    padding: 0.75rem 0 0.75rem 1rem;
+  }
+  .tl-ciudad {
+    font-size: 0.93rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .tl-fecha {
+    font-size: 0.8rem;
+    color: var(--texto-sec);
+  }
+  .tl-spacer {
+    /* gap column */
+  }
+
+  /* Amenidades */
+  .amen-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+  }
+  .amen-card {
+    background: #fff;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 1.1rem 1.2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+  .amen-icono {
+    color: var(--primario);
+    flex-shrink: 0;
+    margin-top: 0.05rem;
+  }
+  .amen-titulo {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.2rem;
+  }
+  .amen-desc {
+    font-size: 0.8rem;
+    color: var(--texto-sec);
+    line-height: 1.45;
+  }
+
+  /* Sidebar */
+  .sidebar-card {
+    background: #fff;
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  }
+  .sidebar-titulo {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primario);
+    margin-bottom: 1rem;
+  }
+
+  .precio-lista {
+    margin-bottom: 1.25rem;
+  }
+  .precio-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--borde);
+    font-size: 0.875rem;
+  }
+  .precio-lbl {
+    color: var(--texto-sec);
+  }
+  .precio-val {
+    font-weight: 600;
+  }
+  .precio-total-fila {
+    border-bottom: none;
+    padding-top: 0.85rem;
+  }
+  .precio-total-lbl {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .precio-total-num {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--primario);
+  }
+
+  .btn-reservar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.25rem;
+    background: var(--primario);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      opacity 0.15s,
+      transform 0.1s;
+  }
+  .btn-reservar:hover {
+    opacity: 0.87;
+  }
+  .btn-reservar:active {
+    transform: scale(0.98);
+  }
+
+  .sidebar-nota {
+    margin-top: 0.85rem;
+    text-align: center;
+    font-size: 0.74rem;
+    color: var(--texto-sec);
+  }
+  .sidebar-aviso {
+    margin-top: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 0.75rem 0.9rem;
+    background: #eff6ff;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #1d4ed8;
+    line-height: 1.45;
+  }
+
+  /* Skeleton */
+  @keyframes shimmer {
+    0% {
+      background-position: -400px 0;
+    }
+    100% {
+      background-position: 400px 0;
+    }
+  }
+  .sk {
+    border-radius: 6px;
+    margin-bottom: 0.6rem;
+    background: linear-gradient(90deg, #e8eaed 25%, #f5f5f5 50%, #e8eaed 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  .sk-hero {
+    height: 168px;
+    border-radius: 0;
+    margin-bottom: 0;
+  }
+  .sk-campo {
+    height: 3rem;
+  }
+  .sk-amen {
+    height: 80px;
+    border-radius: 10px;
+  }
+  .sk-btn {
+    height: 2.8rem;
+    border-radius: 8px;
+  }
+  .sk-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid var(--borde);
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  }
+  .sk-pad {
+    padding: 1.5rem;
+  }
+  .sk-row4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  .sk-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+  }
+
+  .error-msg {
+    padding: 2rem;
+    background: #fff3f3;
+    color: #c0392b;
+    border-radius: 10px;
+    border: 1px solid #f5c6cb;
+  }
+
+  /* Barra nav superior */
+  .nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .nav-carrito {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--primario);
+    background: #fff;
+    border: 1.5px solid var(--borde);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+    transition: background 0.15s;
+  }
+  .nav-carrito:hover {
+    background: var(--fila-hover);
+  }
+  .nav-carrito svg {
+    stroke: var(--primario);
+  }
+
+  .fab-badge {
+    position: absolute;
+    top: -0.35rem;
+    right: -0.35rem;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.2rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 960px) {
+    .layout-grid {
+      grid-template-columns: 1fr;
+    }
+    .col-sidebar {
+      position: static;
+    }
+    .det-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 580px) {
+    .pag {
+      padding: 1.25rem 1rem 3rem;
+    }
+    .iata {
+      font-size: 2.4rem;
+    }
+    .det-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .amen-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

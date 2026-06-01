@@ -1,0 +1,644 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PopupConfirmacion from '../components/PopupConfirmacion.astro';
+---
+
+<Layout titulo="Carrito – Hub Global">
+  <div class="pagina">
+
+    <div class="pagina-header">
+      <div>
+        <h1>Carrito de reservas</h1>
+        <p class="sub" id="sub-count"></p>
+      </div>
+      <a href="/" class="btn-volver">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7"></path>
+        </svg>
+        Seguir explorando
+      </a>
+    </div>
+
+    <div id="carrito-vacio" style="display:none" class="estado-vacio">
+      <svg width="60" height="60" viewBox="0 0 24 24" fill="none"
+        stroke="#cbd5e1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      </svg>
+      <p class="vacio-titulo">Tu carrito está vacío</p>
+      <p class="vacio-sub">Explora los vuelos disponibles y añade reservas desde la página de detalle.</p>
+      <a href="/" class="btn-primario">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        Ver vuelos disponibles
+      </a>
+    </div>
+
+    <div id="carrito-contenido" style="display:none" class="carrito-grid">
+
+      <div class="col-vuelos" id="tabla-carrito"></div>
+
+      <aside class="col-resumen">
+        <div class="resumen-card card">
+          <h2 class="resumen-titulo">Resumen del pedido</h2>
+          <div id="resumen-items" class="resumen-items"></div>
+          <div class="resumen-sep"></div>
+          <div class="resumen-total-row">
+            <span>Total</span>
+            <strong id="total-global">—</strong>
+          </div>
+          <button class="btn-confirmar" id="btn-confirmar">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"></path>
+            </svg>
+            Confirmar reserva
+          </button>
+          <button class="btn-vaciar-txt" id="btn-vaciar">Vaciar carrito</button>
+          <p class="resumen-nota">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            Cancelación gratuita hasta 24 h antes del vuelo.
+          </p>
+        </div>
+      </aside>
+    </div>
+
+    <PopupConfirmacion />
+  </div>
+</Layout>
+
+<script>
+  import type { ItemCarrito } from '../models/Vuelo';
+  import { formatearFecha, formatearPrecio, tieneDescuentoEdad } from '../models/Vuelo';
+
+  // En modo mock la confirmación no llama a la API
+  const USE_MOCK = import.meta.env.PUBLIC_USE_MOCK === 'true';
+
+  // Lee el carrito del localStorage
+  function getCarrito(): ItemCarrito[] {
+    return JSON.parse(localStorage.getItem('carrito') || '[]');
+  }
+
+  // Renderiza las tarjetas y el panel de resumen, o muestra el estado vacío
+  function renderCarrito() {
+    const items = getCarrito();
+    const vacio = document.getElementById('carrito-vacio')!;
+    const contenido = document.getElementById('carrito-contenido')!;
+    const subCount = document.getElementById('sub-count')!;
+
+    if (items.length === 0) {
+      vacio.style.display = 'flex';
+      contenido.style.display = 'none';
+      subCount.textContent = '';
+      return;
+    }
+
+    vacio.style.display = 'none';
+    contenido.style.display = 'grid';
+    subCount.textContent = `${items.length} vuelo${items.length !== 1 ? 's' : ''} en tu carrito`;
+
+    // Renderizar tarjetas de vuelo
+    const tabla = document.getElementById('tabla-carrito')!;
+    tabla.innerHTML = items
+      .map((item, idx) => {
+        const nPax = item.pasajeros.length;
+        const filasPax = item.pasajeros
+          .map((p) => {
+            const desc = tieneDescuentoEdad(p.edad);
+            const precio = desc ? item.vuelo.precio * 0.7 : item.vuelo.precio;
+            return `<tr>
+              <td>${p.nombre}</td>
+              <td class="td-mono">${p.dni}</td>
+              <td>${p.edad}${desc ? ' <span class="badge-desc">-30%</span>' : ''}</td>
+              <td class="td-precio">${formatearPrecio(precio)} <span class="moneda">${item.vuelo.moneda}</span></td>
+            </tr>`;
+          })
+          .join('');
+
+        return `
+        <div class="card vuelo-card">
+          <div class="vuelo-header">
+            <div class="ruta-wrap">
+              <div class="ruta-main">
+                <span class="iata-code">${item.vuelo.origen}</span>
+                <svg width="36" height="16" viewBox="0 0 36 16" fill="none" class="ruta-flecha">
+                  <path d="M2 8h32M26 2l8 6-8 6" stroke="rgba(255,255,255,0.5)"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="iata-code">${item.vuelo.destino}</span>
+              </div>
+              <div class="vuelo-tags">
+                <span class="tag-codigo">${item.vuelo.codigoVuelo}</span>
+                <span class="tag-fecha">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  ${formatearFecha(item.vuelo.fechaSalida)}
+                </span>
+              </div>
+            </div>
+            <button class="btn-quitar" data-idx="${idx}" title="Eliminar vuelo del carrito">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <table class="pax-tabla">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>DNI</th>
+                <th>Edad</th>
+                <th>Precio</th>
+              </tr>
+            </thead>
+            <tbody>${filasPax}</tbody>
+          </table>
+
+          <div class="subtotal-row">
+            <span class="subtotal-pax">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              ${nPax} pasajero${nPax !== 1 ? 's' : ''}
+            </span>
+            <div class="subtotal-val-wrap">
+              <span class="subtotal-lbl">Subtotal</span>
+              <strong class="subtotal-val">${formatearPrecio(item.total)} <span class="subtotal-moneda">${item.vuelo.moneda}</span></strong>
+            </div>
+          </div>
+        </div>`;
+      })
+      .join('');
+
+    // Renderizar resumen lateral
+    const resumenItems = document.getElementById('resumen-items')!;
+    resumenItems.innerHTML = items
+      .map(
+        (item) => `
+        <div class="resumen-item">
+          <div>
+            <span class="resumen-ruta">${item.vuelo.origen} → ${item.vuelo.destino}</span>
+            <span class="resumen-codigo">${item.vuelo.codigoVuelo}</span>
+          </div>
+          <div class="resumen-item-precio">
+            <span class="resumen-pax-count">${item.pasajeros.length} pax</span>
+            <strong class="resumen-precio-val">${formatearPrecio(item.total)} ${item.vuelo.moneda}</strong>
+          </div>
+        </div>`
+      )
+      .join('');
+
+    // Actualizar total global
+    const total = items.reduce((s, i) => s + i.total, 0);
+    document.getElementById('total-global')!.textContent = `${formatearPrecio(total)} EUR`;
+
+    // Listeners de los botones quitar
+    tabla.querySelectorAll<HTMLButtonElement>('.btn-quitar').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const carrito = getCarrito();
+        carrito.splice(Number(btn.dataset.idx), 1);
+        localStorage.setItem('carrito', JSON.stringify(carrito));
+        actualizarBadge();
+        renderCarrito();
+      });
+    });
+  }
+
+  // Actualiza el contador del icono del carrito en la barra de navegación
+  function actualizarBadge() {
+    const badge = document.getElementById('carrito-badge');
+    if (badge) {
+      const n = getCarrito().length;
+      badge.textContent = String(n);
+      badge.style.display = n > 0 ? 'flex' : 'none';
+    }
+  }
+
+  document.getElementById('btn-vaciar')!.addEventListener('click', () => {
+    if (confirm('¿Vaciar el carrito? Esta acción no se puede deshacer.')) {
+      localStorage.removeItem('carrito');
+      actualizarBadge();
+      renderCarrito();
+    }
+  });
+
+  // Envía el carrito a /api/reservas, vacía el localStorage y muestra el popup de éxito
+  document.getElementById('btn-confirmar')!.addEventListener('click', async () => {
+    const items = getCarrito();
+    if (items.length === 0) return;
+
+    const btn = document.getElementById('btn-confirmar') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.8s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg> Enviando...';
+
+    try {
+      if (!USE_MOCK) {
+        const res = await fetch('/api/reservas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(items),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as any).error || `HTTP ${res.status}`);
+        }
+      }
+
+      localStorage.removeItem('carrito');
+      actualizarBadge();
+      renderCarrito();
+      document.getElementById('popup-confirmacion')!.style.display = 'flex';
+    } catch (err: any) {
+      alert(`Error al confirmar la reserva: ${err.message}`);
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg> Confirmar reserva';
+    }
+  });
+
+  renderCarrito();
+  actualizarBadge();
+</script>
+
+<style>
+  .pagina {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .pagina-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #1e293b;
+  }
+
+  .sub {
+    font-size: 0.875rem;
+    color: var(--texto-sec);
+    margin-top: 0.2rem;
+  }
+
+  .btn-volver {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--texto-sec);
+    text-decoration: none;
+    white-space: nowrap;
+    margin-top: 0.4rem;
+    transition: color 0.15s;
+  }
+  .btn-volver:hover { color: var(--primario); }
+
+  /* Estado vacío */
+  .estado-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    text-align: center;
+    min-height: 58vh;
+  }
+  .vacio-titulo { font-size: 1.3rem; font-weight: 700; color: #1e293b; }
+  .vacio-sub {
+    font-size: 0.9rem;
+    color: var(--texto-sec);
+    max-width: 340px;
+    line-height: 1.6;
+  }
+  .btn-primario {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.75rem;
+    background: var(--primario);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.925rem;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: 0.5rem;
+    transition: opacity 0.15s;
+  }
+  .btn-primario:hover { opacity: 0.87; }
+
+  /* Layout principal */
+  .carrito-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .col-vuelos {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Tarjeta de vuelo */
+  .vuelo-card { overflow: hidden; padding: 0; }
+
+  .vuelo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem 1.1rem;
+    background: linear-gradient(135deg, var(--primario) 0%, #243d7a 100%);
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .ruta-wrap { flex: 1; min-width: 0; }
+
+  .ruta-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .iata-code {
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .ruta-flecha { flex-shrink: 0; }
+
+  .vuelo-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .tag-codigo {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.2rem 0.6rem;
+    border-radius: 5px;
+  }
+  .tag-fecha {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .btn-quitar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .btn-quitar:hover { background: rgba(255, 255, 255, 0.22); }
+
+  /* Tabla pasajeros */
+  .pax-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.855rem;
+  }
+  .pax-tabla th {
+    padding: 0.6rem 1.25rem;
+    text-align: left;
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--texto-sec);
+    background: #f8fafc;
+    border-bottom: 1px solid var(--borde);
+  }
+  .pax-tabla td {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--borde);
+    color: #1e293b;
+  }
+  .pax-tabla tr:last-child td { border-bottom: none; }
+  .td-mono { font-family: monospace; font-size: 0.82rem; color: var(--texto-sec); }
+  .td-precio { font-weight: 600; }
+  .moneda { font-size: 0.78rem; font-weight: 400; color: var(--texto-sec); }
+
+  .badge-desc {
+    background: #dcfce7;
+    color: #166534;
+    font-size: 0.67rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    margin-left: 0.3rem;
+  }
+
+  /* Barra de subtotal */
+  .subtotal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    background: #f8fafc;
+    border-top: 1px solid var(--borde);
+  }
+  .subtotal-pax {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--texto-sec);
+  }
+  .subtotal-val-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .subtotal-lbl { font-size: 0.8rem; color: var(--texto-sec); }
+  .subtotal-val {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primario);
+    letter-spacing: -0.01em;
+  }
+  .subtotal-moneda { font-size: 0.8rem; font-weight: 500; }
+
+  /* Columna del resumen */
+  .col-resumen {
+    position: sticky;
+    top: 1.5rem;
+  }
+
+  .resumen-card { padding: 1.5rem; }
+
+  .resumen-titulo {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #1e293b;
+    margin-bottom: 1.1rem;
+  }
+
+  .resumen-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .resumen-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.845rem;
+  }
+  .resumen-ruta {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .resumen-codigo {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--texto-sec);
+    margin-top: 0.1rem;
+  }
+  .resumen-item-precio {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1rem;
+    flex-shrink: 0;
+  }
+  .resumen-pax-count { font-size: 0.7rem; color: var(--texto-sec); }
+  .resumen-precio-val { font-weight: 700; color: #1e293b; font-size: 0.9rem; }
+
+  .resumen-sep {
+    height: 1px;
+    background: var(--borde);
+    margin: 1.1rem 0;
+  }
+
+  .resumen-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1.25rem;
+  }
+  .resumen-total-row span {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .resumen-total-row strong {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--primario);
+    letter-spacing: -0.03em;
+  }
+
+  .btn-confirmar {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--primario);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.925rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .btn-confirmar:hover:not(:disabled) { opacity: 0.88; }
+  .btn-confirmar:active:not(:disabled) { transform: scale(0.98); }
+  .btn-confirmar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-vaciar-txt {
+    width: 100%;
+    padding: 0.55rem;
+    background: transparent;
+    color: var(--texto-sec);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.855rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    margin-bottom: 1rem;
+  }
+  .btn-vaciar-txt:hover { background: #fef2f2; color: #dc2626; }
+
+  .resumen-nota {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    font-size: 0.74rem;
+    color: var(--texto-sec);
+    line-height: 1.5;
+  }
+  .resumen-nota svg { flex-shrink: 0; margin-top: 0.1rem; }
+
+  /* Animación del spinner al confirmar */
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Responsive */
+  @media (max-width: 780px) {
+    .carrito-grid { grid-template-columns: 1fr; }
+    .col-resumen { position: static; }
+    .iata-code { font-size: 1.5rem; }
+    .pagina { padding: 1.5rem 1rem 2.5rem; }
+    h1 { font-size: 1.5rem; }
+  }
+</style>

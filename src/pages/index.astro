@@ -1,11 +1,113 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import TablaVuelos from '../components/TablaVuelos.astro';
 ---
 
-<Layout>
-	<Welcome />
+<Layout titulo="Vuelos Disponibles – Hub Global">
+  <div class="pagina">
+    <header class="cabecera">
+      <div>
+        <h1>Vuelos Disponibles</h1>
+        <p class="sub">
+          Logística de aviación en tiempo real para Operaciones de Hub Global.
+        </p>
+      </div>
+      <a href="/carrito" class="btn-carrito" aria-label="Ver carrito">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"
+          ></circle>
+          <path
+            d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+          ></path>
+        </svg>
+        <span id="carrito-badge" class="badge" style="display:none">0</span>
+      </a>
+    </header>
+
+    <section class="tabla-wrap">
+      <TablaVuelos />
+    </section>
+  </div>
 </Layout>
+
+<style>
+  .pagina {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* Cabecera */
+  .cabecera {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+  .sub {
+    font-size: 0.875rem;
+    color: var(--texto-sec);
+    margin-top: 0.2rem;
+  }
+
+  .btn-carrito {
+    position: relative;
+    text-decoration: none;
+  }
+
+  .badge {
+    position: absolute;
+    top: -0.4rem;
+    right: -0.4rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Tabla */
+  .tabla-wrap {
+    /* sin card ni overflow: lo gestiona el componente */
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .pagina {
+      padding: 1.5rem 1rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+<script>
+  const badge = document.getElementById('carrito-badge');
+  if (badge) {
+    const n = JSON.parse(localStorage.getItem('carrito') || '[]').length;
+    badge.textContent = String(n);
+    badge.style.display = n > 0 ? 'flex' : 'none';
+  }
+</script>

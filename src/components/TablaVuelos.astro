@@ -1,0 +1,938 @@
+---
+
+---
+
+<div id="tv-root" class="tv-layout">
+  <!-- ── Panel de filtros ── -->
+  <aside class="filtros-panel card">
+    <div class="filtros-header">
+      <span class="filtros-titulo">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"
+          ></polygon>
+        </svg>
+        Filtros
+      </span>
+      <button id="btn-limpiar" class="btn-limpiar" style="display:none"
+        >Limpiar</button
+      >
+    </div>
+
+    <!-- Búsqueda origen -->
+    <div class="filtro-grupo">
+      <label class="filtro-lbl" for="f-origen">
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"
+          ></path><circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        Origen
+      </label>
+      <div class="input-wrap">
+        <input
+          id="f-origen"
+          type="text"
+          class="filtro-input"
+          placeholder="Ej: Madrid, Sevilla…"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <!-- Búsqueda destino -->
+    <div class="filtro-grupo">
+      <label class="filtro-lbl" for="f-destino">
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"
+          ></path><circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        Destino
+      </label>
+      <div class="input-wrap">
+        <input
+          id="f-destino"
+          type="text"
+          class="filtro-input"
+          placeholder="Ej: Barcelona, Palma…"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <!-- Precio máximo -->
+    <div class="filtro-grupo">
+      <label class="filtro-lbl" for="f-precio">
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="12" y1="1" x2="12" y2="23"></line><path
+            d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        Precio máximo
+      </label>
+      <div class="slider-wrap">
+        <input
+          id="f-precio"
+          type="range"
+          class="filtro-range"
+          min="0"
+          max="1000"
+          step="5"
+          value="1000"
+        />
+        <div class="slider-labels">
+          <span>0 €</span>
+          <span id="f-precio-val" class="precio-actual">1000 €</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultado activo -->
+    <div id="filtros-resultado" class="filtros-resultado" style="display:none">
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="11" cy="11" r="8"></circle><line
+          x1="21"
+          y1="21"
+          x2="16.65"
+          y2="16.65"></line>
+      </svg>
+      <span id="filtros-resultado-txt"></span>
+    </div>
+  </aside>
+
+  <!-- ── Tabla ── -->
+  <div class="tv-tabla-col">
+    <div id="tv-skeleton" class="card sk-wrap">
+      <div class="sk sk-head"></div>
+      <div class="sk sk-row"></div>
+      <div class="sk sk-row"></div>
+      <div class="sk sk-row"></div>
+      <div class="sk sk-row"></div>
+      <div class="sk sk-row"></div>
+    </div>
+
+    <div id="tv-tabla" class="card" style="display:none">
+      <div class="tabla-header">
+        <span class="tabla-titulo">Vuelos disponibles</span>
+        <span id="tv-info" class="tabla-info"></span>
+      </div>
+
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Ruta</th>
+              <th>Vuelo</th>
+              <th>Salida</th>
+              <th>Llegada</th>
+              <th>Precio</th>
+              <th>Plazas</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tv-body"></tbody>
+        </table>
+      </div>
+
+      <div class="pie">
+        <div class="paginacion">
+          <button id="tv-prev" class="pag-btn" aria-label="Anterior">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+          </button>
+          <span id="tv-paginas" class="pag-info"></span>
+          <button id="tv-next" class="pag-btn" aria-label="Siguiente">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tv-vacio" class="card tv-vacio" style="display:none">
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#cbd5e1"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="11" cy="11" r="8"></circle><line
+          x1="21"
+          y1="21"
+          x2="16.65"
+          y2="16.65"></line>
+      </svg>
+      <p>No se encontraron vuelos con los filtros aplicados.</p>
+      <button id="btn-limpiar-vacio" class="btn-limpiar-vacio"
+        >Quitar filtros</button
+      >
+    </div>
+
+    <div id="tv-error" class="tv-error" style="display:none">
+      <span id="tv-error-msg"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { VuelosController } from '../controllers/VuelosController';
+  import { formatearFecha, formatearPrecio } from '../models/Vuelo';
+  import type { EstadoTabla } from '../controllers/VuelosController';
+  import { AEROPUERTOS } from '../lib/aeropuertos';
+
+  // Instancia del controlador MVC que gestiona carga, filtrado y paginación
+  const ctrl = new VuelosController();
+  const sk = document.getElementById('tv-skeleton')!;
+  const tabla = document.getElementById('tv-tabla')!;
+  const vacio = document.getElementById('tv-vacio')!;
+  const errDiv = document.getElementById('tv-error')!;
+  const errMsg = document.getElementById('tv-error-msg')!;
+  const tbody = document.getElementById('tv-body')!;
+  const info = document.getElementById('tv-info')!;
+  const paginas = document.getElementById('tv-paginas')!;
+  const btnPrev = document.getElementById('tv-prev') as HTMLButtonElement;
+  const btnNext = document.getElementById('tv-next') as HTMLButtonElement;
+
+  // Referencias a los controles del panel de filtros
+  const fOrigen = document.getElementById('f-origen') as HTMLInputElement;
+  const fDestino = document.getElementById('f-destino') as HTMLInputElement;
+  const fPrecio = document.getElementById('f-precio') as HTMLInputElement;
+  const fPrecioVal = document.getElementById('f-precio-val')!;
+  const btnLimpiar = document.getElementById(
+    'btn-limpiar'
+  ) as HTMLButtonElement;
+  const btnLimpiarVacio = document.getElementById(
+    'btn-limpiar-vacio'
+  ) as HTMLButtonElement;
+  const filtrosResultado = document.getElementById('filtros-resultado')!;
+  const filtrosResultadoTxt = document.getElementById('filtros-resultado-txt')!;
+
+  // Lee los valores actuales de los inputs y los devuelve como objeto de filtros
+  function getFiltros() {
+    return {
+      origen: fOrigen.value.trim() || undefined,
+      destino: fDestino.value.trim() || undefined,
+      precioMax: parseFloat(fPrecio.value),
+    };
+  }
+
+  // Comprueba si algún filtro está activo (para mostrar/ocultar el botón "Limpiar")
+  function hayFiltrosActivos() {
+    return (
+      !!fOrigen.value.trim() ||
+      !!fDestino.value.trim() ||
+      parseFloat(fPrecio.value) < ctrl.getPrecioMax()
+    );
+  }
+
+  // Aplica los filtros activos al controlador y actualiza visibilidad del botón limpiar
+  function aplicar() {
+    ctrl.aplicarFiltros(getFiltros());
+    btnLimpiar.style.display = hayFiltrosActivos() ? 'block' : 'none';
+  }
+
+  // Restablece todos los filtros a sus valores por defecto
+  function limpiar() {
+    fOrigen.value = '';
+    fDestino.value = '';
+    fPrecio.value = String(ctrl.getPrecioMax());
+    fPrecioVal.textContent = `${ctrl.getPrecioMax()} €`;
+    btnLimpiar.style.display = 'none';
+    ctrl.aplicarFiltros({});
+  }
+
+  fOrigen.addEventListener('input', aplicar);
+  fDestino.addEventListener('input', aplicar);
+  fPrecio.addEventListener('input', () => {
+    fPrecioVal.textContent = `${fPrecio.value} €`;
+    aplicar();
+  });
+  btnLimpiar.addEventListener('click', limpiar);
+  btnLimpiarVacio.addEventListener('click', limpiar);
+
+  // Genera el HTML del badge de estado coloreado según el valor del campo
+  function estadoBadge(estado: string) {
+    const cls =
+      estado === 'DISPONIBLE'
+        ? 'badge-disp'
+        : estado === 'COMPLETO'
+          ? 'badge-comp'
+          : 'badge-canc';
+    return `<span class="estado-badge ${cls}">${estado.charAt(0) + estado.slice(1).toLowerCase()}</span>`;
+  }
+
+  // Genera el HTML de la celda de plazas con color según disponibilidad
+  function plazasCell(n: number) {
+    if (n === 0) return `<span class="plazas-agotado">Agotado</span>`;
+    if (n < 15)
+      return `<span class="plazas-bajo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${n}</span>`;
+    return `<span class="plazas-ok">${n}</span>`;
+  }
+
+  // Actualiza el DOM completo en respuesta a un cambio de estado del controlador
+  function render(e: EstadoTabla) {
+    const cargando = e.cargando;
+    sk.style.display = cargando ? 'block' : 'none';
+    errDiv.style.display = e.error ? 'flex' : 'none';
+
+    if (e.error) {
+      errMsg.textContent = e.error;
+      tabla.style.display = 'none';
+      vacio.style.display = 'none';
+      return;
+    }
+    if (cargando) {
+      tabla.style.display = 'none';
+      vacio.style.display = 'none';
+      return;
+    }
+
+    const sinResultados = e.totalVuelos === 0;
+    tabla.style.display = sinResultados ? 'none' : 'block';
+    vacio.style.display = sinResultados ? 'block' : 'none';
+
+    // Muestra el contador de resultados cuando hay filtros activos
+    if (hayFiltrosActivos() && !sinResultados) {
+      filtrosResultado.style.display = 'flex';
+      filtrosResultadoTxt.textContent = `${e.totalVuelos} resultado${e.totalVuelos !== 1 ? 's' : ''}`;
+    } else {
+      filtrosResultado.style.display = 'none';
+    }
+
+    if (sinResultados) return;
+
+    tbody.innerHTML = e.vuelos
+      .map(
+        (v) => `
+      <tr class="fila${e.vueloSeleccionado === v.codigoVuelo ? ' sel' : ''}" data-codigo="${v.codigoVuelo}">
+        <td class="td-ruta">
+          <div class="ruta-wrap">
+            <span class="iata-sm">${v.origen}</span>
+            <svg width="28" height="14" viewBox="0 0 28 14" fill="none" style="flex-shrink:0">
+              <path d="M2 7h24M18 2l8 5-8 5" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="iata-sm">${v.destino}</span>
+          </div>
+          <div class="ruta-nombres">
+            <span>${AEROPUERTOS[v.origen] ?? v.origen}</span>
+            <span>→</span>
+            <span>${AEROPUERTOS[v.destino] ?? v.destino}</span>
+          </div>
+        </td>
+        <td><span class="vuelo-codigo">${v.codigoVuelo}</span></td>
+        <td class="td-fecha">
+          <span class="fecha-principal">${formatearFecha(v.fechaSalida)}</span>
+        </td>
+        <td class="td-fecha">
+          <span class="fecha-principal">${formatearFecha(v.fechaLlegada)}</span>
+          <span class="hora-tag">${v.horaLlegada}</span>
+        </td>
+        <td class="td-precio">
+          <span class="precio-val">${formatearPrecio(v.precio)}</span>
+          <span class="precio-moneda">EUR</span>
+        </td>
+        <td>${plazasCell(v.plazasDisponibles)}</td>
+        <td>${estadoBadge(v.estado)}</td>
+        <td>
+          <button class="btn-info" data-codigo="${v.codigoVuelo}">
+            Más info
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </td>
+      </tr>
+    `
+      )
+      .join('');
+
+    info.textContent = `${e.totalVuelos} vuelo${e.totalVuelos !== 1 ? 's' : ''}`;
+    paginas.textContent = `${e.paginaActual} / ${e.totalPaginas}`;
+    btnPrev.disabled = e.paginaActual <= 1;
+    btnNext.disabled = e.paginaActual >= e.totalPaginas;
+
+    tbody.querySelectorAll<HTMLTableRowElement>('.fila').forEach((f) =>
+      f.addEventListener('click', (ev) => {
+        if ((ev.target as HTMLElement).closest('button,a')) return;
+        ctrl.seleccionarVuelo(f.dataset.codigo!);
+      })
+    );
+    tbody
+      .querySelectorAll<HTMLButtonElement>('.btn-info')
+      .forEach((b) =>
+        b.addEventListener(
+          'click',
+          () =>
+            (window.location.href = `/vuelos/detalle?codigo=${b.dataset.codigo}`)
+        )
+      );
+  }
+
+  btnPrev.addEventListener('click', () =>
+    ctrl.irAPagina(ctrl.getEstado().paginaActual - 1)
+  );
+  btnNext.addEventListener('click', () =>
+    ctrl.irAPagina(ctrl.getEstado().paginaActual + 1)
+  );
+
+  ctrl.suscribir((e) => {
+    render(e);
+    // Ajusta el rango del slider al precio máximo real una vez que los datos están disponibles
+    if (
+      !e.cargando &&
+      !e.error &&
+      parseFloat(fPrecio.max) !== ctrl.getPrecioMax()
+    ) {
+      const max = ctrl.getPrecioMax();
+      fPrecio.max = String(Math.ceil(max));
+      fPrecio.value = String(Math.ceil(max));
+      fPrecioVal.textContent = `${Math.ceil(max)} €`;
+    }
+  });
+  ctrl.inicializar();
+</script>
+
+<style is:global>
+  /* ── Layout raíz ── */
+  .tv-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  /* ── Panel filtros ── */
+  .filtros-panel {
+    position: sticky;
+    top: 1.25rem;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .filtros-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .filtros-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .btn-limpiar {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--primario);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: opacity 0.15s;
+  }
+  .btn-limpiar:hover {
+    opacity: 0.65;
+  }
+
+  .filtro-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .filtro-lbl {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--texto-sec);
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+  .filtro-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1.5px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: #fff;
+    color: #1e293b;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+    outline: none;
+  }
+  .filtro-input::placeholder {
+    color: #b0b8c4;
+  }
+  .filtro-input:focus {
+    border-color: var(--primario);
+    box-shadow: 0 0 0 3px rgba(26, 46, 90, 0.08);
+  }
+
+  /* Slider */
+  .slider-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .filtro-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--borde);
+    border-radius: 99px;
+    outline: none;
+    cursor: pointer;
+    accent-color: var(--primario);
+  }
+  .filtro-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primario);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  }
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--texto-sec);
+  }
+  .precio-actual {
+    font-weight: 700;
+    color: var(--primario);
+  }
+
+  /* Resultado filtros */
+  .filtros-resultado {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.7rem;
+    background: #eff6ff;
+    border-radius: 7px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primario);
+  }
+
+  /* ── Tabla col ── */
+  .tv-tabla-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  /* Skeleton */
+  @keyframes shimmer {
+    0% {
+      background-position: -600px 0;
+    }
+    100% {
+      background-position: 600px 0;
+    }
+  }
+  .sk-wrap {
+    padding: 1.25rem 1.5rem;
+  }
+  .sk {
+    border-radius: 7px;
+    margin-bottom: 0.65rem;
+    background: linear-gradient(90deg, #e8eaed 25%, #f5f5f5 50%, #e8eaed 75%);
+    background-size: 1200px 100%;
+    animation: shimmer 1.6s infinite;
+  }
+  .sk-head {
+    height: 1.5rem;
+    width: 35%;
+    margin-bottom: 1.25rem;
+  }
+  .sk-row {
+    height: 3.5rem;
+  }
+
+  /* Header tabla */
+  .tabla-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 1.5rem 0.9rem;
+    border-bottom: 1px solid var(--borde);
+  }
+  .tabla-titulo {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .tabla-info {
+    font-size: 0.78rem;
+    color: var(--texto-sec);
+  }
+
+  .tabla-scroll {
+    overflow-x: auto;
+  }
+
+  #tv-tabla table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.865rem;
+  }
+  #tv-tabla thead tr {
+    background: #f8fafc;
+    border-bottom: 1px solid var(--borde);
+  }
+  #tv-tabla th {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--texto-sec);
+    white-space: nowrap;
+  }
+  #tv-tabla td {
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: middle;
+  }
+
+  .fila {
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .fila:hover {
+    background: #f8fafc;
+  }
+  .fila.sel {
+    background: #eff6ff;
+  }
+  .fila:last-child td {
+    border-bottom: none;
+  }
+
+  .td-ruta {
+    min-width: 190px;
+  }
+  .ruta-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.2rem;
+  }
+  .iata-sm {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+  }
+  .ruta-nombres {
+    display: flex;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--texto-sec);
+    flex-wrap: wrap;
+  }
+
+  .vuelo-codigo {
+    display: inline-block;
+    padding: 0.25rem 0.65rem;
+    background: #eff6ff;
+    color: var(--primario);
+    border-radius: 5px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .td-fecha {
+    white-space: nowrap;
+  }
+  .fecha-principal {
+    display: block;
+    font-weight: 500;
+    color: #1e293b;
+  }
+  .hora-tag {
+    display: inline-block;
+    margin-top: 0.18rem;
+    font-size: 0.72rem;
+    color: var(--texto-sec);
+    background: #f1f5f9;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .td-precio {
+    white-space: nowrap;
+  }
+  .precio-val {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primario);
+  }
+  .precio-moneda {
+    font-size: 0.72rem;
+    color: var(--texto-sec);
+    margin-left: 0.2rem;
+  }
+
+  .plazas-ok {
+    font-weight: 500;
+    color: #1e293b;
+  }
+  .plazas-bajo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #b45309;
+    background: #fffbeb;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    border: 1px solid #fde68a;
+  }
+  .plazas-agotado {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #991b1b;
+    background: #fff1f2;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    border: 1px solid #fecdd3;
+  }
+
+  .estado-badge {
+    display: inline-block;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .badge-disp {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .badge-comp {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .badge-canc {
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .btn-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.9rem;
+    background: transparent;
+    color: var(--primario);
+    border: 1.5px solid var(--primario);
+    border-radius: 7px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background 0.14s,
+      color 0.14s;
+  }
+  .btn-info:hover {
+    background: var(--primario);
+    color: #fff;
+  }
+
+  .pie {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--borde);
+  }
+  .paginacion {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .pag-info {
+    font-size: 0.8rem;
+    color: var(--texto-sec);
+    min-width: 3.5rem;
+    text-align: center;
+  }
+  .pag-btn {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--borde);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--texto-sec);
+    transition:
+      background 0.14s,
+      border-color 0.14s,
+      color 0.14s;
+  }
+  .pag-btn:hover:not(:disabled) {
+    background: var(--primario);
+    border-color: var(--primario);
+    color: #fff;
+  }
+  .pag-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* Vacío */
+  .tv-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    padding: 3rem 2rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--texto-sec);
+  }
+  .btn-limpiar-vacio {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--primario);
+    background: none;
+    border: 1.5px solid var(--primario);
+    border-radius: 7px;
+    padding: 0.4rem 1rem;
+    cursor: pointer;
+    transition:
+      background 0.14s,
+      color 0.14s;
+  }
+  .btn-limpiar-vacio:hover {
+    background: var(--primario);
+    color: #fff;
+  }
+
+  /* Error */
+  .tv-error {
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    background: #fff3f3;
+    color: #c0392b;
+    border: 1px solid #f5c6cb;
+    font-size: 0.875rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 860px) {
+    .tv-layout {
+      grid-template-columns: 1fr;
+    }
+    .filtros-panel {
+      position: static;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .filtro-grupo {
+      flex: 1;
+      min-width: 160px;
+    }
+  }
+</style>

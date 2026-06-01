@@ -1,0 +1,531 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getReservasByUser } from '../lib/reservas';
+import { formatearFecha, formatearPrecio, tieneDescuentoEdad } from '../models/Vuelo';
+import { nombreAeropuerto } from '../lib/aeropuertos';
+
+const user = Astro.locals.user!;
+const reservas = getReservasByUser(user.sub);
+reservas.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+---
+
+<Layout titulo="Mis Reservas – Hub Global">
+  <div class="pagina">
+    <div class="cabecera">
+      <div>
+        <h1>Mis Reservas</h1>
+        <p class="sub">Historial de vuelos reservados por tu cuenta.</p>
+      </div>
+      <a href="/" class="btn-volver">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M19 12H5M12 5l-7 7 7 7"></path>
+        </svg>
+        Ver vuelos
+      </a>
+    </div>
+
+    {
+      reservas.length === 0 ? (
+        <div class="estado-vacio">
+          <svg
+            width="56"
+            height="56"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#cbd5e1"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+            <path d="M8 21h8M12 17v4" />
+          </svg>
+          <p class="vacio-titulo">No tienes reservas todavía</p>
+          <p class="vacio-sub">
+            Cuando confirmes una reserva desde el carrito, aparecerá aquí.
+          </p>
+          <a href="/" class="btn-primario">Buscar vuelos</a>
+        </div>
+      ) : (
+        <div class="lista">
+          {reservas.map((reserva) => (
+            <div class="card reserva-card">
+              <div class="reserva-header">
+                <div class="ruta">
+                  <span class="iata">{reserva.vuelo.origen}</span>
+                  <svg
+                    width="32"
+                    height="14"
+                    viewBox="0 0 32 14"
+                    fill="none"
+                    class="flecha"
+                  >
+                    <path
+                      d="M2 7h28M22 1l8 6-8 6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span class="iata">{reserva.vuelo.destino}</span>
+                  <span class="codigo">{reserva.vuelo.codigoVuelo}</span>
+                </div>
+                <div class="meta-derecha">
+                  <span class="fecha-reserva">
+                    Reservado el {formatearFecha(reserva.fecha)}
+                  </span>
+                  <span class={`badge-estado ${reserva.estado === 'cancelada' ? 'badge-cancelada' : ''}`}>
+                    {reserva.estado === 'cancelada' ? 'Cancelada' : 'Confirmada'}
+                  </span>
+                </div>
+              </div>
+
+              <div class="ruta-nombres">
+                <span>{nombreAeropuerto(reserva.vuelo.origen)}</span>
+                <span class="sep">→</span>
+                <span>{nombreAeropuerto(reserva.vuelo.destino)}</span>
+                <span class="fecha-vuelo">
+                  · Salida: {formatearFecha(reserva.vuelo.fechaSalida)}
+                </span>
+              </div>
+
+              <table class="pax-tabla">
+                <thead>
+                  <tr>
+                    <th>Pasajero</th>
+                    <th>DNI</th>
+                    <th>Edad</th>
+                    <th>Precio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reserva.pasajeros.map((p) => {
+                    const desc = tieneDescuentoEdad(p.edad);
+                    const precio = desc
+                      ? reserva.vuelo.precio * 0.7
+                      : reserva.vuelo.precio;
+                    return (
+                      <tr>
+                        <td>{p.nombre}</td>
+                        <td>{p.dni}</td>
+                        <td>
+                          {p.edad}
+                          {desc && <span class="badge-desc">-30%</span>}
+                        </td>
+                        <td>
+                          {formatearPrecio(precio)} {reserva.vuelo.moneda}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              <div class="reserva-footer">
+                <span class="total-label">Total pagado:</span>
+                <strong class="total-valor">
+                  {formatearPrecio(reserva.total)} {reserva.vuelo.moneda}
+                </strong>
+                {reserva.estado !== 'cancelada' && (
+                  <button
+                    class="btn-cancelar"
+                    data-id={reserva.id}
+                    title="Cancelar reserva"
+                  >
+                    Cancelar reserva
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+  </div>
+  <!-- Dialog de confirmación de cancelación -->
+  <div id="cancel-dialog" class="dialog-overlay" style="display:none">
+    <div class="dialog-box">
+      <p class="dialog-titulo">¿Cancelar esta reserva?</p>
+      <p class="dialog-sub">
+        Esta acción no se puede deshacer. La reserva quedará marcada como cancelada.
+      </p>
+      <div class="dialog-actions">
+        <button class="dialog-btn-cancel" id="dialog-no">No, mantener</button>
+        <button class="dialog-btn-confirm" id="dialog-si">Sí, cancelar</button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const dialog = document.getElementById('cancel-dialog') as HTMLDivElement;
+  let pendingBtn: HTMLButtonElement | null = null;
+
+  // Abre el dialog de confirmación al pulsar "Cancelar reserva"
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.btn-cancelar');
+    if (!btn) return;
+    pendingBtn = btn;
+    dialog.style.display = 'flex';
+  });
+
+  document.getElementById('dialog-no')!.addEventListener('click', () => {
+    dialog.style.display = 'none';
+    pendingBtn = null;
+  });
+
+  // Ejecuta la cancelación si el usuario confirma
+  document.getElementById('dialog-si')!.addEventListener('click', async () => {
+    if (!pendingBtn) return;
+
+    const siBtn = document.getElementById('dialog-si') as HTMLButtonElement;
+    siBtn.disabled = true;
+    siBtn.textContent = 'Cancelando…';
+
+    const id = pendingBtn.dataset.id!;
+    const res = await fetch(`/api/reservas/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+
+    dialog.style.display = 'none';
+    siBtn.disabled = false;
+    siBtn.textContent = 'Sí, cancelar';
+
+    if (data.ok) {
+      const card = pendingBtn.closest<HTMLDivElement>('.reserva-card')!;
+      const badge = card.querySelector<HTMLSpanElement>('.badge-estado')!;
+      badge.textContent = 'Cancelada';
+      badge.classList.add('badge-cancelada');
+      pendingBtn.remove();
+    } else {
+      alert(data.error || 'Error al cancelar la reserva.');
+    }
+
+    pendingBtn = null;
+  });
+</script>
+
+<style>
+  .pagina {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .cabecera {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .sub {
+    font-size: 0.875rem;
+    color: var(--texto-sec);
+    margin-top: 0.2rem;
+  }
+
+  .btn-volver {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--texto-sec);
+    text-decoration: none;
+    white-space: nowrap;
+    margin-top: 0.4rem;
+    transition: color 0.15s;
+  }
+  .btn-volver:hover {
+    color: var(--primario);
+  }
+
+  /* Estado vacío */
+  .estado-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    text-align: center;
+    min-height: 55vh;
+  }
+  .vacio-titulo {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .vacio-sub {
+    font-size: 0.9rem;
+    color: var(--texto-sec);
+    max-width: 320px;
+    line-height: 1.5;
+  }
+  .btn-primario {
+    padding: 0.7rem 1.5rem;
+    background: var(--primario);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+
+  /* Lista reservas */
+  .lista {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .reserva-card {
+    padding: 1.5rem;
+  }
+
+  .reserva-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .ruta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .iata {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primario);
+  }
+  .flecha {
+    color: var(--primario);
+    opacity: 0.6;
+  }
+  .codigo {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--texto-sec);
+    background: #f1f5f9;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+  }
+
+  .meta-derecha {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .fecha-reserva {
+    font-size: 0.8rem;
+    color: var(--texto-sec);
+  }
+  .badge-estado {
+    background: #dcfce7;
+    color: #166534;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .ruta-nombres {
+    font-size: 0.8rem;
+    color: var(--texto-sec);
+    margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    align-items: center;
+  }
+  .sep {
+    color: #cbd5e1;
+  }
+  .fecha-vuelo {
+    margin-left: 0.25rem;
+  }
+
+  /* Tabla pasajeros */
+  .pax-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .pax-tabla th {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--texto-sec);
+    border-bottom: 1px solid var(--borde);
+  }
+  .pax-tabla td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--borde);
+  }
+  .pax-tabla tr:last-child td {
+    border-bottom: none;
+  }
+
+  .badge-desc {
+    background: #dcfce7;
+    color: #166534;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    margin-left: 0.35rem;
+  }
+
+  .badge-cancelada {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+  }
+
+  /* Footer de la reserva */
+  .reserva-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--borde);
+    flex-wrap: wrap;
+  }
+  .total-label {
+    font-size: 0.875rem;
+    color: var(--texto-sec);
+  }
+  .total-valor {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primario);
+    flex: 1;
+    text-align: right;
+  }
+  .btn-cancelar {
+    padding: 0.45rem 1rem;
+    background: transparent;
+    color: var(--texto-sec);
+    border: 1.5px solid var(--borde);
+    border-radius: 7px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .btn-cancelar:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+  .btn-cancelar:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* Dialog de confirmación */
+  .dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.48);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+  }
+  .dialog-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.75rem 2rem;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  }
+  .dialog-titulo {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  .dialog-sub {
+    font-size: 0.875rem;
+    color: var(--texto-sec);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+  }
+  .dialog-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+  }
+  .dialog-btn-cancel {
+    padding: 0.6rem 1.25rem;
+    background: #fff;
+    color: var(--texto-sec);
+    border: 1.5px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .dialog-btn-cancel:hover { background: #f8fafc; }
+  .dialog-btn-confirm {
+    padding: 0.6rem 1.25rem;
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .dialog-btn-confirm:hover { opacity: 0.88; }
+  .dialog-btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  @media (max-width: 600px) {
+    .pagina {
+      padding: 1.5rem 1rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+    }
+    .iata {
+      font-size: 1.2rem;
+    }
+    .reserva-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

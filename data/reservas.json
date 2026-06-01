@@ -1,0 +1,30 @@
+[
+  {
+    "id": "a0ba9dba-119b-4a25-90a2-9d6b13c4c6c0",
+    "userId": "5a0be42d-f19c-48fa-88e2-26423a8faaa7",
+    "userEmail": "prueba@correo.com",
+    "fecha": "2026-05-27T21:55:46.492Z",
+    "vuelo": {
+      "vueloId": "2",
+      "codigoVuelo": "IB1002",
+      "origen": "BCN",
+      "destino": "MAD",
+      "fechaSalida": "2026-05-20T00:00:00.000Z",
+      "fechaLlegada": "2026-05-20T00:00:00.000Z",
+      "horaLlegada": "PT12H30M00S",
+      "precio": 90,
+      "moneda": "EUR",
+      "plazasDisponibles": 180,
+      "estado": "Programado"
+    },
+    "pasajeros": [
+      {
+        "nombre": "Prueba1",
+        "dni": "123123123E",
+        "edad": 90
+      }
+    ],
+    "total": 62.99999999999999,
+    "estado": "confirmada"
+  }
+]

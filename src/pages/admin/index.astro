@@ -1,0 +1,859 @@
+---
+import Layout from '../../layouts/Layout.astro';
+const user = Astro.locals.user!;
+---
+
+<Layout titulo="Panel Admin – Gestora de Vuelos">
+  <div class="admin-wrap">
+    <header class="page-header">
+      <div>
+        <h1>Panel de administración</h1>
+        <p class="subtitle">
+          Gestión de vuelos · edita precio, plazas y estado
+        </p>
+      </div>
+      <button class="btn-nuevo" id="btn-nuevo-vuelo">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Nuevo vuelo
+      </button>
+    </header>
+
+    <!-- Filtros rápidos -->
+    <div class="card toolbar">
+      <input type="text" id="search" placeholder="Buscar por código o ruta…" />
+      <select id="filter-estado">
+        <option value="">Todos los estados</option>
+        <option value="DISPONIBLE">Disponible</option>
+        <option value="COMPLETO">Completo</option>
+        <option value="CANCELADO">Cancelado</option>
+      </select>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card table-card">
+      <div id="loading" class="loading-state">Cargando vuelos…</div>
+      <div id="error-state" class="error-state" style="display:none"></div>
+      <div id="table-wrap" style="display:none">
+        <div class="tabla-header">
+          <span class="tabla-titulo">Vuelos en SAP</span>
+          <span id="vuelos-count" class="tabla-info"></span>
+        </div>
+        <div class="tabla-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Ruta</th>
+                <th>Vuelo</th>
+                <th>Salida</th>
+                <th>Precio</th>
+                <th>Plazas</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="vuelos-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pie">
+          <div class="paginacion">
+            <button id="btn-prev" class="pag-btn" aria-label="Anterior">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6"></path>
+              </svg>
+            </button>
+            <span id="pag-info" class="pag-info"></span>
+            <button id="btn-next" class="pag-btn" aria-label="Siguiente">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de edición -->
+  <div id="edit-overlay" class="overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Editar vuelo <span id="modal-codigo"></span></h2>
+        <button class="btn-close" id="close-modal" aria-label="Cerrar">✕</button
+        >
+      </div>
+      <div id="modal-error" class="modal-error" style="display:none"></div>
+      <form id="edit-form">
+        <input type="hidden" id="edit-vueloId" />
+        <div class="modal-grid">
+          <div class="field">
+            <label for="edit-precio">Precio (€)</label>
+            <input
+              type="number"
+              id="edit-precio"
+              min="0"
+              step="0.01"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="edit-plazas">Plazas disponibles</label>
+            <input type="number" id="edit-plazas" min="0" step="1" required />
+          </div>
+          <div class="field full">
+            <label for="edit-estado">Estado</label>
+            <select id="edit-estado">
+              <option value="DISPONIBLE">Disponible</option>
+              <option value="COMPLETO">Completo</option>
+              <option value="CANCELADO">Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-edit" class="btn-secondary"
+            >Cancelar</button
+          >
+          <button type="submit" id="save-btn" class="btn-primary">
+            <span id="save-text">Guardar cambios</span>
+            <span id="save-spinner" style="display:none">Guardando…</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- Modal de nuevo vuelo -->
+  <div id="new-overlay" class="overlay" style="display:none">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h2>Nuevo vuelo</h2>
+        <button class="btn-close" id="close-new-modal" aria-label="Cerrar">✕</button>
+      </div>
+      <div id="new-modal-error" class="modal-error" style="display:none"></div>
+      <form id="new-form">
+        <div class="modal-grid modal-grid-3">
+          <div class="field">
+            <label for="new-codigo">Código de vuelo</label>
+            <input type="text" id="new-codigo" placeholder="Ej: IB1001" required />
+          </div>
+          <div class="field">
+            <label for="new-origen">Origen (IATA)</label>
+            <input type="text" id="new-origen" placeholder="Ej: MAD" maxlength="3" required />
+          </div>
+          <div class="field">
+            <label for="new-destino">Destino (IATA)</label>
+            <input type="text" id="new-destino" placeholder="Ej: BCN" maxlength="3" required />
+          </div>
+          <div class="field">
+            <label for="new-fecha-salida">Fecha salida</label>
+            <input type="date" id="new-fecha-salida" required />
+          </div>
+          <div class="field">
+            <label for="new-fecha-llegada">Fecha llegada</label>
+            <input type="date" id="new-fecha-llegada" required />
+          </div>
+          <div class="field">
+            <label for="new-hora-llegada">Hora llegada</label>
+            <input type="time" id="new-hora-llegada" required />
+          </div>
+          <div class="field">
+            <label for="new-precio">Precio (€)</label>
+            <input type="number" id="new-precio" min="0" step="0.01" required />
+          </div>
+          <div class="field">
+            <label for="new-capacidad">Plazas</label>
+            <input type="number" id="new-capacidad" min="1" step="1" required />
+          </div>
+          <div class="field">
+            <label for="new-estado">Estado</label>
+            <select id="new-estado">
+              <option value="DISPONIBLE">Disponible</option>
+              <option value="COMPLETO">Completo</option>
+              <option value="CANCELADO">Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-new" class="btn-secondary">Cancelar</button>
+          <button type="submit" id="new-save-btn" class="btn-primary">
+            <span id="new-save-text">Crear vuelo</span>
+            <span id="new-save-spinner" style="display:none">Creando…</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // El token se expone en cliente porque el admin ya está autenticado por cookie SSR
+  const PROXY_URL = import.meta.env.PUBLIC_PROXY_URL || 'http://localhost:3001';
+  const API_TOKEN = import.meta.env.PUBLIC_API_TOKEN || '';
+
+  interface Vuelo {
+    vueloId: string;
+    codigoVuelo: string;
+    origen: string;
+    destino: string;
+    fechaSalida: string;
+    precio: number;
+    plazasDisponibles: number;
+    estado: string;
+  }
+
+  // `allVuelos` es la fuente de verdad; `filtered` es el subconjunto que muestra la tabla
+  let allVuelos: Vuelo[] = [];
+  let filtered: Vuelo[] = [];
+  const PER_PAGE = 10;
+  let page = 1;
+
+  const tbody = document.getElementById(
+    'vuelos-tbody'
+  ) as HTMLTableSectionElement;
+  const loadingEl = document.getElementById('loading') as HTMLDivElement;
+  const errorEl = document.getElementById('error-state') as HTMLDivElement;
+  const tableWrap = document.getElementById('table-wrap') as HTMLDivElement;
+  const vuelosCount = document.getElementById('vuelos-count') as HTMLSpanElement;
+  const pagInfo = document.getElementById('pag-info') as HTMLSpanElement;
+  const btnPrev = document.getElementById('btn-prev') as HTMLButtonElement;
+  const btnNext = document.getElementById('btn-next') as HTMLButtonElement;
+  const searchInput = document.getElementById('search') as HTMLInputElement;
+  const filterEstado = document.getElementById(
+    'filter-estado'
+  ) as HTMLSelectElement;
+
+  // Modal
+  const overlay = document.getElementById('edit-overlay') as HTMLDivElement;
+  const modalCodigo = document.getElementById(
+    'modal-codigo'
+  ) as HTMLSpanElement;
+  const modalError = document.getElementById('modal-error') as HTMLDivElement;
+  const editForm = document.getElementById('edit-form') as HTMLFormElement;
+  const editVueloId = document.getElementById(
+    'edit-vueloId'
+  ) as HTMLInputElement;
+  const editPrecio = document.getElementById('edit-precio') as HTMLInputElement;
+  const editPlazas = document.getElementById('edit-plazas') as HTMLInputElement;
+  const editEstado = document.getElementById(
+    'edit-estado'
+  ) as HTMLSelectElement;
+
+  // Formatea una fecha ISO a formato español corto ("15 may. 2026")
+  function formatFecha(iso: string | null) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
+  // Genera el HTML del badge de estado con clase de color correspondiente
+  function estadoBadge(e: string) {
+    const map: Record<string, string> = {
+      DISPONIBLE: 'badge-green',
+      COMPLETO: 'badge-yellow',
+      CANCELADO: 'badge-red',
+    };
+    const label = e.charAt(0) + e.slice(1).toLowerCase();
+    return `<span class="badge ${map[e] || 'badge-gray'}">${label}</span>`;
+  }
+
+  // Genera la celda de plazas con colores según disponibilidad (igual que TablaVuelos)
+  function plazasCell(n: number) {
+    if (n === 0) return `<span class="plazas-agotado">Agotado</span>`;
+    if (n < 15)
+      return `<span class="plazas-bajo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${n}</span>`;
+    return `<span class="plazas-ok">${n}</span>`;
+  }
+
+  // Filtra los vuelos por texto libre y estado, luego vuelve a la página 1
+  function applyFilter() {
+    const q = searchInput.value.toLowerCase();
+    const est = filterEstado.value;
+    filtered = allVuelos.filter((v) => {
+      const matchQ =
+        !q ||
+        v.codigoVuelo.toLowerCase().includes(q) ||
+        v.origen.toLowerCase().includes(q) ||
+        v.destino.toLowerCase().includes(q);
+      const matchE = !est || v.estado === est;
+      return matchQ && matchE;
+    });
+    page = 1;
+    render();
+  }
+
+  // Renderiza la página actual de la tabla y actualiza la paginación
+  function render() {
+    const start = (page - 1) * PER_PAGE;
+    const slice = filtered.slice(start, start + PER_PAGE);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+
+    vuelosCount.textContent = `${filtered.length} vuelo${filtered.length !== 1 ? 's' : ''}`;
+    pagInfo.textContent = `${page} / ${totalPages}`;
+    btnPrev.disabled = page <= 1;
+    btnNext.disabled = page >= totalPages;
+
+    tbody.innerHTML = slice
+      .map(
+        (v) => `
+      <tr>
+        <td class="td-ruta">
+          <div class="ruta-wrap">
+            <span class="iata-sm">${v.origen}</span>
+            <svg width="28" height="14" viewBox="0 0 28 14" fill="none" style="flex-shrink:0">
+              <path d="M2 7h24M18 2l8 5-8 5" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="iata-sm">${v.destino}</span>
+          </div>
+        </td>
+        <td><span class="vuelo-codigo">${v.codigoVuelo}</span></td>
+        <td class="td-fecha">${formatFecha(v.fechaSalida)}</td>
+        <td class="td-precio">
+          <span class="precio-val">${v.precio.toFixed(2)}</span>
+          <span class="precio-moneda">€</span>
+        </td>
+        <td>${plazasCell(v.plazasDisponibles)}</td>
+        <td>${estadoBadge(v.estado)}</td>
+        <td>
+          <button class="btn-edit" data-id="${v.vueloId}" data-codigo="${v.codigoVuelo}"
+            data-precio="${v.precio}" data-plazas="${v.plazasDisponibles}" data-estado="${v.estado}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Editar
+          </button>
+        </td>
+      </tr>
+    `
+      )
+      .join('');
+
+    // Listeners en botones editar
+    tbody.querySelectorAll('.btn-edit').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const el = btn as HTMLButtonElement;
+        editVueloId.value = el.dataset.id!;
+        modalCodigo.textContent = el.dataset.codigo!;
+        editPrecio.value = el.dataset.precio!;
+        editPlazas.value = el.dataset.plazas!;
+        editEstado.value = el.dataset.estado!;
+        modalError.style.display = 'none';
+        overlay.style.display = 'flex';
+      });
+    });
+  }
+
+  // Carga todos los vuelos del proxy y actualiza el estado global
+  async function loadVuelos() {
+    try {
+      const res = await fetch(`${PROXY_URL}/api/vuelos`, {
+        headers: { Authorization: `Bearer ${API_TOKEN}` },
+      });
+      const json = await res.json();
+      allVuelos = json.data || [];
+      filtered = allVuelos;
+      loadingEl.style.display = 'none';
+      tableWrap.style.display = 'block';
+      render();
+    } catch (err) {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'block';
+      errorEl.textContent =
+        'Error al cargar los vuelos. Comprueba que el proxy está activo.';
+    }
+  }
+
+  // Cierra el modal al pulsar el botón de cierre, cancelar o hacer clic fuera
+  document
+    .getElementById('close-modal')!
+    .addEventListener('click', () => (overlay.style.display = 'none'));
+  document
+    .getElementById('cancel-edit')!
+    .addEventListener('click', () => (overlay.style.display = 'none'));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.style.display = 'none';
+  });
+
+  // Envía el PATCH al proxy SAP con los datos del formulario de edición
+  editForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    modalError.style.display = 'none';
+    const saveText = document.getElementById('save-text') as HTMLSpanElement;
+    const saveSpinner = document.getElementById(
+      'save-spinner'
+    ) as HTMLSpanElement;
+    const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
+    saveText.style.display = 'none';
+    saveSpinner.style.display = 'inline';
+    saveBtn.disabled = true;
+
+    try {
+      const res = await fetch(`${PROXY_URL}/api/vuelos/${editVueloId.value}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${API_TOKEN}`,
+        },
+        body: JSON.stringify({
+          precio: parseFloat(editPrecio.value),
+          capacidad: parseInt(editPlazas.value, 10),
+          estado: editEstado.value,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        overlay.style.display = 'none';
+        await loadVuelos();
+      } else {
+        modalError.textContent = data.error || 'Error al guardar.';
+        modalError.style.display = 'block';
+      }
+    } catch {
+      modalError.textContent = 'Error de conexión.';
+      modalError.style.display = 'block';
+    } finally {
+      saveText.style.display = 'inline';
+      saveSpinner.style.display = 'none';
+      saveBtn.disabled = false;
+    }
+  });
+
+  btnPrev.addEventListener('click', () => { page--; render(); });
+  btnNext.addEventListener('click', () => { page++; render(); });
+
+  // Modal nuevo vuelo
+  const newOverlay = document.getElementById('new-overlay') as HTMLDivElement;
+  const newForm = document.getElementById('new-form') as HTMLFormElement;
+  const newModalError = document.getElementById('new-modal-error') as HTMLDivElement;
+
+  function openNewModal() {
+    newForm.reset();
+    newModalError.style.display = 'none';
+    newOverlay.style.display = 'flex';
+  }
+
+  document.getElementById('btn-nuevo-vuelo')!.addEventListener('click', openNewModal);
+  document.getElementById('close-new-modal')!.addEventListener('click', () => (newOverlay.style.display = 'none'));
+  document.getElementById('cancel-new')!.addEventListener('click', () => (newOverlay.style.display = 'none'));
+  newOverlay.addEventListener('click', (e) => { if (e.target === newOverlay) newOverlay.style.display = 'none'; });
+
+  // Envía el POST al proxy SAP para crear el vuelo y recarga la tabla
+  newForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    newModalError.style.display = 'none';
+    const saveText = document.getElementById('new-save-text') as HTMLSpanElement;
+    const saveSpinner = document.getElementById('new-save-spinner') as HTMLSpanElement;
+    const saveBtn = document.getElementById('new-save-btn') as HTMLButtonElement;
+    saveText.style.display = 'none';
+    saveSpinner.style.display = 'inline';
+    saveBtn.disabled = true;
+
+    try {
+      const horaRaw = (document.getElementById('new-hora-llegada') as HTMLInputElement).value;
+      const res = await fetch(`${PROXY_URL}/api/vuelos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${API_TOKEN}`,
+        },
+        body: JSON.stringify({
+          codigoVuelo: (document.getElementById('new-codigo') as HTMLInputElement).value.trim().toUpperCase(),
+          origen: (document.getElementById('new-origen') as HTMLInputElement).value.trim().toUpperCase(),
+          destino: (document.getElementById('new-destino') as HTMLInputElement).value.trim().toUpperCase(),
+          fechaSalida: (document.getElementById('new-fecha-salida') as HTMLInputElement).value,
+          fechaLlegada: (document.getElementById('new-fecha-llegada') as HTMLInputElement).value,
+          horaLlegada: horaRaw,
+          precio: parseFloat((document.getElementById('new-precio') as HTMLInputElement).value),
+          capacidad: parseInt((document.getElementById('new-capacidad') as HTMLInputElement).value, 10),
+          estado: (document.getElementById('new-estado') as HTMLSelectElement).value,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        newOverlay.style.display = 'none';
+        await loadVuelos();
+      } else {
+        newModalError.textContent = data.error || 'Error al crear el vuelo.';
+        newModalError.style.display = 'block';
+      }
+    } catch {
+      newModalError.textContent = 'Error de conexión.';
+      newModalError.style.display = 'block';
+    } finally {
+      saveText.style.display = 'inline';
+      saveSpinner.style.display = 'none';
+      saveBtn.disabled = false;
+    }
+  });
+
+  searchInput.addEventListener('input', applyFilter);
+  filterEstado.addEventListener('change', applyFilter);
+
+  loadVuelos();
+</script>
+
+<style>
+  .admin-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .page-header h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #1e293b;
+    margin-bottom: 0.2rem;
+  }
+  .subtitle { color: var(--texto-sec); font-size: 0.875rem; }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toolbar input,
+  .toolbar select {
+    padding: 0.6rem 1rem;
+    border: 1.5px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    outline: none;
+    background: #fff;
+    color: #1e293b;
+    transition: border-color 0.15s;
+  }
+  .toolbar input { flex: 1; min-width: 200px; }
+  .toolbar input:focus,
+  .toolbar select:focus { border-color: var(--primario); }
+
+  /* Tabla */
+  .table-card { overflow-x: auto; }
+
+  .tabla-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 1.5rem 0.9rem;
+    border-bottom: 1px solid var(--borde);
+  }
+  .tabla-titulo { font-size: 0.92rem; font-weight: 700; color: #1e293b; }
+  .tabla-info { font-size: 0.78rem; color: var(--texto-sec); }
+
+  .tabla-scroll { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.865rem; }
+  thead tr { background: #f8fafc; border-bottom: 1px solid var(--borde); }
+  thead th {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    font-size: 0.67rem;
+    font-weight: 700;
+    color: var(--texto-sec);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    white-space: nowrap;
+  }
+  tbody tr { transition: background 0.12s; }
+  tbody tr:hover { background: #f8fafc; }
+  td {
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid var(--borde);
+    color: #1e293b;
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* Celda de ruta */
+  .td-ruta { min-width: 170px; }
+  .ruta-wrap { display: flex; align-items: center; gap: 0.5rem; }
+  .iata-sm {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+  }
+
+  /* Código de vuelo */
+  .vuelo-codigo {
+    display: inline-block;
+    padding: 0.25rem 0.65rem;
+    background: #eff6ff;
+    color: var(--primario);
+    border-radius: 5px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  /* Fecha */
+  .td-fecha { white-space: nowrap; font-weight: 500; }
+
+  /* Precio */
+  .td-precio { white-space: nowrap; }
+  .precio-val { font-size: 1rem; font-weight: 700; color: var(--primario); }
+  .precio-moneda { font-size: 0.72rem; color: var(--texto-sec); margin-left: 0.2rem; }
+
+  /* Plazas */
+  .plazas-ok { font-weight: 500; color: #1e293b; }
+  .plazas-bajo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #b45309;
+    background: #fffbeb;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    border: 1px solid #fde68a;
+  }
+  .plazas-agotado {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #991b1b;
+    background: #fff1f2;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    border: 1px solid #fecdd3;
+  }
+
+  /* Estado */
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .badge-green  { background: #dcfce7; color: #166534; }
+  .badge-yellow { background: #fef9c3; color: #854d0e; }
+  .badge-red    { background: #fee2e2; color: #991b1b; }
+  .badge-gray   { background: #f1f5f9; color: #475569; }
+
+  /* Botón editar */
+  .btn-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.9rem;
+    background: transparent;
+    color: var(--primario);
+    border: 1.5px solid var(--primario);
+    border-radius: 7px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.14s, color 0.14s;
+  }
+  .btn-edit:hover { background: var(--primario); color: #fff; }
+
+  .loading-state,
+  .error-state {
+    padding: 3.5rem;
+    text-align: center;
+    color: var(--texto-sec);
+    font-size: 0.925rem;
+  }
+  .error-state { color: #dc2626; }
+
+  /* Paginación */
+  .pie {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--borde);
+  }
+  .paginacion { display: flex; align-items: center; gap: 0.5rem; }
+  .pag-info {
+    font-size: 0.8rem;
+    color: var(--texto-sec);
+    min-width: 3.5rem;
+    text-align: center;
+  }
+  .pag-btn {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--borde);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--texto-sec);
+    transition: background 0.14s, border-color 0.14s, color 0.14s;
+  }
+  .pag-btn:hover:not(:disabled) { background: var(--primario); border-color: var(--primario); color: #fff; }
+  .pag-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Botón nuevo vuelo */
+  .btn-nuevo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.65rem 1.25rem;
+    background: var(--primario);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    margin-top: 0.25rem;
+  }
+  .btn-nuevo:hover { opacity: 0.87; }
+
+  /* Modal de edición */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.48);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1.5rem;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .modal-header h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #1e293b;
+  }
+  .btn-close {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: none;
+    background: #f1f5f9;
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--texto-sec);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .btn-close:hover { background: #e2e8f0; }
+
+  .modal-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .modal-wide { max-width: 640px; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .modal-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 0.35rem; }
+  .field.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--texto-sec);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .modal-grid input,
+  .modal-grid select {
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.925rem;
+    font-family: inherit;
+    color: #1e293b;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .modal-grid input:focus,
+  .modal-grid select:focus {
+    border-color: var(--primario);
+    box-shadow: 0 0 0 3px rgba(26, 46, 90, 0.1);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+  .btn-primary {
+    padding: 0.65rem 1.5rem;
+    background: var(--primario);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.87; }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .btn-secondary {
+    padding: 0.65rem 1.25rem;
+    background: #fff;
+    color: var(--texto-sec);
+    border: 1.5px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .btn-secondary:hover { background: #f8fafc; }
+</style>

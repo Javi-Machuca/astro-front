@@ -1,0 +1,23 @@
+[
+  {
+    "id": "8ead982a-0e9c-4998-a4fb-4502ff394d83",
+    "email": "javi@correo.com",
+    "password": "$2b$10$XDcjaOSSCdbRQeV4KiGBlOE6YANt0arlDc0jxNYZtQcRDQFiqvR.u",
+    "name": "Javi Machuca",
+    "role": "admin"
+  },
+  {
+    "id": "582aac49-b331-466a-9b84-05982ef7d65b",
+    "email": "correo@correo.com",
+    "password": "$2b$10$NtLhq1uWgs3qDNPQLj6JTecF0vHIvzQRmBgRrmF72urrVL48ygOXS",
+    "name": "correo",
+    "role": "admin"
+  },
+  {
+    "id": "5a0be42d-f19c-48fa-88e2-26423a8faaa7",
+    "email": "prueba@correo.com",
+    "password": "$2b$10$uI5NvMfZn2Zscb/5YVsMJeZcmxDsyVEdPTPEWZT8m8jHzuPUdCxw2",
+    "name": "prueba",
+    "role": "user"
+  }
+]

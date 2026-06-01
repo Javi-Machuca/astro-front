@@ -1,23 +1,222 @@
+---
+interface Props {
+  titulo?: string;
+  showNav?: boolean;
+}
+const { titulo = 'Gestora de Vuelos', showNav = true } = Astro.props;
+const user = Astro.locals.user;
+---
+
 <!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{titulo}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    {
+      showNav && user && (
+        <nav class="topnav">
+          <div class="nav-inner">
+            <a href={user.role === 'admin' ? '/admin' : '/'} class="nav-brand">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                width="22"
+                height="22"
+              >
+                <path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+              </svg>
+              Gestora de Vuelos
+            </a>
+
+            <div class="nav-links">
+              {user.role === 'admin' && (
+                <>
+                  <a href="/admin" class="nav-link">
+                    Vuelos
+                  </a>
+                  <a href="/admin/reservas" class="nav-link">
+                    Reservas
+                  </a>
+                  <a href="/admin/usuarios" class="nav-link">
+                    Usuarios
+                  </a>
+                  <a href="/" class="nav-link">
+                    Ver como usuario
+                  </a>
+                </>
+              )}
+              {user.role === 'user' && (
+                <>
+                  <a href="/" class="nav-link">
+                    Vuelos
+                  </a>
+                  <a href="/carrito" class="nav-link">
+                    Carrito
+                  </a>
+                  <a href="/mis-reservas" class="nav-link">
+                    Mis Reservas
+                  </a>
+                </>
+              )}
+            </div>
+
+            <div class="nav-user">
+              {user.role === 'admin' && <span class="role-badge">Admin</span>}
+              <span class="user-name">{user.name}</span>
+              <form
+                action="/api/auth/logout"
+                method="post"
+                style="display:inline"
+              >
+                <button type="submit" class="btn-logout">
+                  Cerrar sesión
+                </button>
+              </form>
+            </div>
+          </div>
+        </nav>
+      )
+    }
+    <slot />
+  </body>
 </html>
 
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
+<style is:global>
+  :root {
+    --primario: #1a2e5a;
+    --borde: #e2e8f0;
+    --texto-sec: #64748b;
+    --fondo: #f4f6f9;
+    --fondo-card: #ffffff;
+    --fila-hover: #f8fafc;
+    --fila-sel: #eff6ff;
+    --sombra: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --radio: 10px;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--fondo);
+    color: #1e293b;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .card {
+    background: var(--fondo-card);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+  }
+
+  /* Navbar */
+  .topnav {
+    background: var(--primario);
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  .nav-link {
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .nav-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .nav-user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .role-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .user-name {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .btn-logout {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.35rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-logout:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
 </style>
