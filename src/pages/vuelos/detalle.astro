@@ -242,7 +242,7 @@ import FormularioReserva from '../../components/FormularioReserva.astro';
 
   const USE_MOCK = import.meta.env.PUBLIC_USE_MOCK === 'true';
   const PROXY_URL = import.meta.env.PUBLIC_PROXY_URL || 'http://localhost:3001';
-  // El código de vuelo viene como query param (?codigo=IB1001)
+  // Lee el codigo de vuelo del query param de la URL para saber que vuelo cargar
   const codigo =
     new URLSearchParams(window.location.search).get('codigo') ?? '';
 
@@ -261,7 +261,7 @@ import FormularioReserva from '../../components/FormularioReserva.astro';
     star: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
   };
 
-  // Datos estáticos de operador, cabina y amenidades por código de vuelo
+  // Datos estaticos de operador, cabina y amenidades por codigo de vuelo; se usa DEFAULT_EXTRA si el codigo no tiene entrada
   const EXTRAS: Record<string, Extra> = {
     IB1001: {
       operador: 'Iberia Fleet',
@@ -361,11 +361,11 @@ import FormularioReserva from '../../components/FormularioReserva.astro';
     ],
   };
 
-  // Devuelve "Nombre completo (IATA)" o solo el código si no está mapeado
+  // Devuelve el nombre completo del aeropuerto con su codigo IATA entre parentesis, o solo el codigo si no esta en el mapa
   const nombreAeropuerto = (iata: string) =>
     AEROPUERTOS[iata] ? `${AEROPUERTOS[iata]} (${iata})` : iata;
 
-  // Utilidad para actualizar el texto de un elemento por ID sin boilerplate
+  // Actualiza el textContent de un elemento por su ID; evita repetir la logica de getElementById en cada campo
   function set(id: string, val: string) {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
@@ -381,7 +381,7 @@ import FormularioReserva from '../../components/FormularioReserva.astro';
     return json.data;
   }
 
-  // Carga el vuelo y construye la página; oculta el skeleton al terminar
+  // Carga el vuelo, rellena todos los campos del DOM y muestra el contenido; oculta el skeleton al terminar
   cargarVuelo().then((v) => {
     document.getElementById('sk')!.style.display = 'none';
 
@@ -394,7 +394,7 @@ import FormularioReserva from '../../components/FormularioReserva.astro';
 
     const extra = EXTRAS[v.codigoVuelo] || DEFAULT_EXTRA;
 
-    // Hero
+    // Rellena el bloque hero con origen, destino y badge de estado
     set('d-origen', v.origen);
     set('d-destino', v.destino);
     set(
@@ -412,13 +412,13 @@ import FormularioReserva from '../../components/FormularioReserva.astro';
           ? 'b-comp'
           : 'b-canc');
 
-    // Detalles
+    // Rellena la cuadricula de detalles (codigo, plazas, operador, cabina) con datos del vuelo y los extras estaticos
     set('d-codigo', v.codigoVuelo);
     set('d-plazas', `${v.plazasDisponibles} plazas`);
     set('d-operador', extra.operador);
     set('d-cabina', extra.cabina);
 
-    // Timeline
+    // Rellena el timeline de origen y destino con nombres de aeropuerto y fechas formateadas
     set('d-origen-full', nombreAeropuerto(v.origen));
     set('d-fecha-salida', formatearFecha(v.fechaSalida));
     set('d-destino-full', nombreAeropuerto(v.destino));
@@ -427,17 +427,15 @@ import FormularioReserva from '../../components/FormularioReserva.astro';
       `${formatearFecha(v.fechaLlegada)} · ${v.horaLlegada}`
     );
 
-    // Sidebar precios
+    // Rellena el sidebar con el precio base, muestra el aviso de pocas plazas e inyecta las tarjetas de amenidades
     const precioStr = `${formatearPrecio(v.precio)} ${v.moneda}`;
     set('d-precio-base', precioStr);
     set('d-total', precioStr);
 
-    // Aviso pocas plazas
     if (v.plazasDisponibles < 30) {
       document.getElementById('d-aviso')!.style.display = 'flex';
     }
 
-    // Amenidades
     const amenGrid = document.getElementById('d-amenidades')!;
     amenGrid.innerHTML = extra.amenidades
       .map(
@@ -453,10 +451,9 @@ import FormularioReserva from '../../components/FormularioReserva.astro';
       )
       .join('');
 
-    // Mostrar contenido
     document.getElementById('contenido')!.style.display = 'grid';
 
-    // Botón reservar
+    // Guarda el vuelo en sessionStorage y abre el formulario de reserva al pulsar el boton
     document
       .getElementById('btn-abrir-formulario')!
       .addEventListener('click', () => {
@@ -465,7 +462,7 @@ import FormularioReserva from '../../components/FormularioReserva.astro';
       });
   });
 
-  // Actualiza el badge del carrito en la barra de navegación local de esta página
+  // Actualiza el contador del carrito en la barra local y se suscribe al evento storage para reflejarlo si cambia desde otra pestana
   const fabBadge = document.getElementById('fab-badge')!;
   function actualizarFabBadge() {
     const n = JSON.parse(localStorage.getItem('carrito') || '[]').length;

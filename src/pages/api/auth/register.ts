@@ -13,6 +13,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     );
   }
 
+  // Valida que todos los campos esten presentes y que la contrasena cumpla la longitud minima
   const { email, password, name } = body;
   if (!email || !password || !name) {
     return new Response(
@@ -30,6 +31,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     );
   }
 
+  // Crea el usuario, y si tiene exito firma un JWT y establece la cookie para autenticarlo de inmediato
   const result = createUser(email, password, name, 'user');
   if (!result.ok) {
     return new Response(JSON.stringify({ ok: false, error: result.error }), {

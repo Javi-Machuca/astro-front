@@ -79,7 +79,7 @@ import PopupConfirmacion from '../components/PopupConfirmacion.astro';
   import type { ItemCarrito } from '../models/Vuelo';
   import { formatearFecha, formatearPrecio, tieneDescuentoEdad } from '../models/Vuelo';
 
-  // En modo mock la confirmación no llama a la API
+  // Cuando USE_MOCK esta activo, la confirmacion no llama a la API y solo limpia el localStorage
   const USE_MOCK = import.meta.env.PUBLIC_USE_MOCK === 'true';
 
   // Lee el carrito del localStorage
@@ -87,7 +87,7 @@ import PopupConfirmacion from '../components/PopupConfirmacion.astro';
     return JSON.parse(localStorage.getItem('carrito') || '[]');
   }
 
-  // Renderiza las tarjetas y el panel de resumen, o muestra el estado vacío
+  // Construye las tarjetas de vuelo con la tabla de pasajeros y el panel de resumen lateral; si el carrito esta vacio muestra el estado vacio
   function renderCarrito() {
     const items = getCarrito();
     const vacio = document.getElementById('carrito-vacio')!;
@@ -105,7 +105,7 @@ import PopupConfirmacion from '../components/PopupConfirmacion.astro';
     contenido.style.display = 'grid';
     subCount.textContent = `${items.length} vuelo${items.length !== 1 ? 's' : ''} en tu carrito`;
 
-    // Renderizar tarjetas de vuelo
+    // Genera el HTML de cada tarjeta de vuelo con sus pasajeros, descuentos y subtotal
     const tabla = document.getElementById('tabla-carrito')!;
     tabla.innerHTML = items
       .map((item, idx) => {
@@ -189,7 +189,7 @@ import PopupConfirmacion from '../components/PopupConfirmacion.astro';
       })
       .join('');
 
-    // Renderizar resumen lateral
+    // Rellena el panel lateral con el resumen por vuelo y calcula el total global
     const resumenItems = document.getElementById('resumen-items')!;
     resumenItems.innerHTML = items
       .map(
@@ -207,11 +207,10 @@ import PopupConfirmacion from '../components/PopupConfirmacion.astro';
       )
       .join('');
 
-    // Actualizar total global
     const total = items.reduce((s, i) => s + i.total, 0);
     document.getElementById('total-global')!.textContent = `${formatearPrecio(total)} EUR`;
 
-    // Listeners de los botones quitar
+    // Elimina el item correspondiente del localStorage y vuelve a renderizar el carrito al pulsar el boton de quitar
     tabla.querySelectorAll<HTMLButtonElement>('.btn-quitar').forEach((btn) => {
       btn.addEventListener('click', () => {
         const carrito = getCarrito();
@@ -241,7 +240,7 @@ import PopupConfirmacion from '../components/PopupConfirmacion.astro';
     }
   });
 
-  // Envía el carrito a /api/reservas, vacía el localStorage y muestra el popup de éxito
+  // Envia todos los items del carrito a la API, vacia el localStorage y muestra el popup de confirmacion si tiene exito
   document.getElementById('btn-confirmar')!.addEventListener('click', async () => {
     const items = getCarrito();
     if (items.length === 0) return;

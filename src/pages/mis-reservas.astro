@@ -171,7 +171,7 @@ reservas.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(
   const dialog = document.getElementById('cancel-dialog') as HTMLDivElement;
   let pendingBtn: HTMLButtonElement | null = null;
 
-  // Abre el dialog de confirmación al pulsar "Cancelar reserva"
+  // Captura el clic en cualquier boton "Cancelar reserva" y abre el dialog de confirmacion guardando la referencia al boton pulsado
   document.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.btn-cancelar');
     if (!btn) return;
@@ -184,7 +184,7 @@ reservas.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(
     pendingBtn = null;
   });
 
-  // Ejecuta la cancelación si el usuario confirma
+  // Llama a la API para cancelar la reserva y actualiza el badge de estado en el DOM sin recargar la pagina
   document.getElementById('dialog-si')!.addEventListener('click', async () => {
     if (!pendingBtn) return;
 

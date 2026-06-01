@@ -76,7 +76,7 @@ import Layout from '../../layouts/Layout.astro';
 </Layout>
 
 <script>
-  // Llama al proxy directamente desde el navegador; el acceso ya está protegido por la cookie de sesión admin
+  // La peticion al proxy se hace desde el navegador; el acceso esta protegido por la cookie de sesion de admin
   const PROXY_URL = import.meta.env.PUBLIC_PROXY_URL || 'http://localhost:3001';
   const API_TOKEN = import.meta.env.PUBLIC_API_TOKEN || '';
 
@@ -89,7 +89,7 @@ import Layout from '../../layouts/Layout.astro';
     precioTotal: number;
   }
 
-  // `allReservas` es la copia completa de SAP; `filtered` es el subconjunto tras la búsqueda
+  // Estado de la tabla: allReservas contiene todos los registros de SAP; filtered es el subconjunto visible tras el buscador
   let allReservas: Reserva[] = [];
   let filtered: Reserva[] = [];
   const PER_PAGE = 15;
@@ -106,7 +106,7 @@ import Layout from '../../layouts/Layout.astro';
   const contadorEl = document.getElementById('contador') as HTMLDivElement;
   const resultCount = document.getElementById('result-count') as HTMLSpanElement;
 
-  // Filtra las reservas por texto libre (nombre, DNI, vuelo ID o ID carrito)
+  // Filtra las reservas en memoria por texto libre contra nombre, DNI, vuelo ID e ID carrito
   function applyFilter() {
     const q = searchInput.value.toLowerCase();
     filtered = allReservas.filter((r) => {
@@ -122,7 +122,7 @@ import Layout from '../../layouts/Layout.astro';
     render();
   }
 
-  // Renderiza la página actual y los controles de paginación
+  // Renderiza la pagina actual de la tabla con sus filas y actualiza contadores y controles de paginacion
   function render() {
     const total = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
     const start = (page - 1) * PER_PAGE;
@@ -157,7 +157,7 @@ import Layout from '../../layouts/Layout.astro';
       )
       .join('');
 
-    // Listeners de los botones eliminar
+    // Conecta los botones de eliminar para guardar el ID pendiente y abrir el dialog de confirmacion
     tbody.querySelectorAll<HTMLButtonElement>('.btn-del').forEach((btn) => {
       btn.addEventListener('click', () => {
         pendingId = btn.dataset.id!;
@@ -167,7 +167,7 @@ import Layout from '../../layouts/Layout.astro';
     });
   }
 
-  // Obtiene todas las reservas de ZCARRITO_JMG a través del proxy y actualiza el estado
+  // Obtiene todas las reservas de ZCARRITO_JMG a traves del proxy y actualiza el estado de la tabla
   async function loadReservas() {
     try {
       const res = await fetch(`${PROXY_URL}/api/admin/reservas`, {
@@ -187,7 +187,7 @@ import Layout from '../../layouts/Layout.astro';
     }
   }
 
-  // Dialog de confirmación de eliminación
+  // Gestiona el dialog de confirmacion: cancela la accion o ejecuta el DELETE contra el proxy y elimina la fila del DOM
   const confirmDialog = document.getElementById('confirm-dialog') as HTMLDivElement;
   const dialogNombre = document.getElementById('dialog-nombre') as HTMLSpanElement;
   let pendingId = '';

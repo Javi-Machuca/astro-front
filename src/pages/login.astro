@@ -62,12 +62,14 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
+  // Referencias a los elementos del formulario necesarios para controlar el estado del envio
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMsg = document.getElementById('error-msg') as HTMLDivElement;
   const btnText = document.getElementById('btn-text') as HTMLSpanElement;
   const btnSpinner = document.getElementById('btn-spinner') as HTMLSpanElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
 
+  // Envia las credenciales a la API, muestra el spinner durante la peticion y redirige segun el rol si tiene exito
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorMsg.style.display = 'none';

@@ -105,7 +105,7 @@ const usuarios = getAllUsers();
     }, 3000);
   }
 
-  // Delegación de eventos: detecta clics en los botones de acción de cualquier fila
+  // Delegacion de eventos sobre el tbody: detecta el boton pulsado y ejecuta la accion correspondiente (promover, degradar o eliminar)
   document
     .getElementById('users-tbody')!
     .addEventListener('click', async (e) => {
@@ -128,7 +128,7 @@ const usuarios = getAllUsers();
 
       btn.disabled = true;
 
-      // Cambio de rol: actualiza el badge y el botón en el DOM sin recargar la página
+      // Cambia el rol en el servidor y actualiza el badge y los botones de la fila sin recargar la pagina
       if (action === 'promote' || action === 'demote') {
         const newRole = action === 'promote' ? 'admin' : 'user';
         const res = await fetch(`/api/admin/usuarios/${id}`, {
@@ -138,7 +138,6 @@ const usuarios = getAllUsers();
         });
         const data = await res.json();
         if (data.ok) {
-          // Actualizar badge y botones sin recargar
           const badge = document.getElementById(
             `role-${id}`
           ) as HTMLSpanElement;
@@ -157,7 +156,7 @@ const usuarios = getAllUsers();
         }
       }
 
-      // Eliminación: quita la fila del DOM si el servidor confirma el borrado
+      // Elimina el usuario en el servidor y quita su fila del DOM si la operacion tiene exito
       if (action === 'delete') {
         const res = await fetch(`/api/admin/usuarios/${id}`, {
           method: 'DELETE',

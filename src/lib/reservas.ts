@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import type { Vuelo, Pasajero } from '../models/Vuelo';
 
-// Ruta del archivo de reservas locales (complementa ZCARRITO_JMG que no tiene campo usuario)
+// Archivo de reservas locales: almacena el historial del usuario porque ZCARRITO_JMG no incluye ese campo
 const DATA_DIR = join(process.cwd(), 'data');
 const RESERVAS_FILE = join(DATA_DIR, 'reservas.json');
 

@@ -190,7 +190,7 @@ const user = Astro.locals.user!;
 </Layout>
 
 <script>
-  // El token se expone en cliente porque el admin ya está autenticado por cookie SSR
+  // Variables de entorno publicas: el admin esta autenticado por cookie SSR, no supone exposicion de privilegios
   const PROXY_URL = import.meta.env.PUBLIC_PROXY_URL || 'http://localhost:3001';
   const API_TOKEN = import.meta.env.PUBLIC_API_TOKEN || '';
 
@@ -205,7 +205,7 @@ const user = Astro.locals.user!;
     estado: string;
   }
 
-  // `allVuelos` es la fuente de verdad; `filtered` es el subconjunto que muestra la tabla
+  // Estado de la tabla: allVuelos contiene todos los registros de SAP; filtered es el subconjunto visible tras aplicar los filtros
   let allVuelos: Vuelo[] = [];
   let filtered: Vuelo[] = [];
   const PER_PAGE = 10;
@@ -242,7 +242,7 @@ const user = Astro.locals.user!;
     'edit-estado'
   ) as HTMLSelectElement;
 
-  // Formatea una fecha ISO a formato español corto ("15 may. 2026")
+  // Convierte una fecha ISO al formato corto en espanol para mostrar en la tabla
   function formatFecha(iso: string | null) {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('es-ES', {
@@ -252,7 +252,7 @@ const user = Astro.locals.user!;
     });
   }
 
-  // Genera el HTML del badge de estado con clase de color correspondiente
+  // Genera el HTML del badge de estado con la clase de color segun el valor
   function estadoBadge(e: string) {
     const map: Record<string, string> = {
       DISPONIBLE: 'badge-green',
@@ -263,7 +263,7 @@ const user = Astro.locals.user!;
     return `<span class="badge ${map[e] || 'badge-gray'}">${label}</span>`;
   }
 
-  // Genera la celda de plazas con colores según disponibilidad (igual que TablaVuelos)
+  // Genera la celda de plazas con indicador visual segun disponibilidad
   function plazasCell(n: number) {
     if (n === 0) return `<span class="plazas-agotado">Agotado</span>`;
     if (n < 15)
@@ -271,7 +271,7 @@ const user = Astro.locals.user!;
     return `<span class="plazas-ok">${n}</span>`;
   }
 
-  // Filtra los vuelos por texto libre y estado, luego vuelve a la página 1
+  // Filtra los vuelos cargados por texto libre (codigo/ruta) y estado, y vuelve a la pagina 1
   function applyFilter() {
     const q = searchInput.value.toLowerCase();
     const est = filterEstado.value;
@@ -288,7 +288,7 @@ const user = Astro.locals.user!;
     render();
   }
 
-  // Renderiza la página actual de la tabla y actualiza la paginación
+  // Renderiza la pagina actual de la tabla con sus filas y actualiza los controles de paginacion y contadores
   function render() {
     const start = (page - 1) * PER_PAGE;
     const slice = filtered.slice(start, start + PER_PAGE);
@@ -336,7 +336,7 @@ const user = Astro.locals.user!;
       )
       .join('');
 
-    // Listeners en botones editar
+    // Conecta los botones de editar para rellenar el modal con los datos del vuelo y mostrarlo
     tbody.querySelectorAll('.btn-edit').forEach((btn) => {
       btn.addEventListener('click', () => {
         const el = btn as HTMLButtonElement;
@@ -351,7 +351,7 @@ const user = Astro.locals.user!;
     });
   }
 
-  // Carga todos los vuelos del proxy y actualiza el estado global
+  // Obtiene la lista completa de vuelos del proxy SAP y actualiza las variables de estado y la tabla
   async function loadVuelos() {
     try {
       const res = await fetch(`${PROXY_URL}/api/vuelos`, {
@@ -371,7 +371,7 @@ const user = Astro.locals.user!;
     }
   }
 
-  // Cierra el modal al pulsar el botón de cierre, cancelar o hacer clic fuera
+  // Cierra el modal de edicion al pulsar el boton de cierre, cancelar o hacer clic fuera del recuadro
   document
     .getElementById('close-modal')!
     .addEventListener('click', () => (overlay.style.display = 'none'));
@@ -382,7 +382,7 @@ const user = Astro.locals.user!;
     if (e.target === overlay) overlay.style.display = 'none';
   });
 
-  // Envía el PATCH al proxy SAP con los datos del formulario de edición
+  // Envia los cambios de precio, plazas y estado al proxy SAP mediante PATCH y recarga la tabla si tiene exito
   editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     modalError.style.display = 'none';
@@ -429,7 +429,7 @@ const user = Astro.locals.user!;
   btnPrev.addEventListener('click', () => { page--; render(); });
   btnNext.addEventListener('click', () => { page++; render(); });
 
-  // Modal nuevo vuelo
+  // Referencias y listeners del modal de creacion de nuevo vuelo
   const newOverlay = document.getElementById('new-overlay') as HTMLDivElement;
   const newForm = document.getElementById('new-form') as HTMLFormElement;
   const newModalError = document.getElementById('new-modal-error') as HTMLDivElement;
@@ -445,7 +445,7 @@ const user = Astro.locals.user!;
   document.getElementById('cancel-new')!.addEventListener('click', () => (newOverlay.style.display = 'none'));
   newOverlay.addEventListener('click', (e) => { if (e.target === newOverlay) newOverlay.style.display = 'none'; });
 
-  // Envía el POST al proxy SAP para crear el vuelo y recarga la tabla
+  // Recoge los datos del formulario, envia el POST al proxy SAP para crear el vuelo y recarga la tabla si tiene exito
   newForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     newModalError.style.display = 'none';

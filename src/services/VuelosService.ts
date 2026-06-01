@@ -1,6 +1,6 @@
 import type { Vuelo, FiltrosVuelos } from '../models/Vuelo';
 
-// URL del proxy Express que actúa de intermediario con SAP
+// URL del proxy Express que actua de intermediario entre el frontend y SAP
 const PROXY_URL = import.meta.env.PUBLIC_PROXY_URL || 'http://localhost:3001';
 
 // Llama al proxy y devuelve `data` del JSON de respuesta; lanza error si falla
@@ -25,7 +25,7 @@ export async function obtenerVuelos(filtros?: FiltrosVuelos): Promise<Vuelo[]> {
   return fetchProxy<Vuelo[]>(`/api/vuelos${qs}`);
 }
 
-// Datos de ejemplo para desarrollo local sin conexión a SAP
+// Datos de vuelos de ejemplo para desarrollo local sin necesidad de conexion a SAP
 export function obtenerVuelosMock(): Vuelo[] {
   return [
     {

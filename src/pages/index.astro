@@ -88,9 +88,8 @@ import TablaVuelos from '../components/TablaVuelos.astro';
     justify-content: center;
   }
 
-  /* Tabla */
+  /* Contenedor de la tabla de vuelos; el propio componente gestiona su card y overflow */
   .tabla-wrap {
-    /* sin card ni overflow: lo gestiona el componente */
   }
 
   /* Responsive */
@@ -104,6 +103,7 @@ import TablaVuelos from '../components/TablaVuelos.astro';
   }
 </style>
 <script>
+  // Lee el numero de items del carrito en localStorage y actualiza el contador visible en el icono
   const badge = document.getElementById('carrito-badge');
   if (badge) {
     const n = JSON.parse(localStorage.getItem('carrito') || '[]').length;

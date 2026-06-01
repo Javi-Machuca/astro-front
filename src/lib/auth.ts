@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-// Rutas del archivo de usuarios y clave de firma JWT
+// Rutas del archivo JSON de usuarios y clave secreta para firmar los JWT
 const DATA_DIR = join(process.cwd(), 'data');
 const USERS_FILE = join(DATA_DIR, 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'tfg-jwt-secret-2026';
@@ -81,7 +81,7 @@ export function deleteUser(
   return { ok: true };
 }
 
-// Busca un usuario por email ignorando mayusculas
+// Busca un usuario por email ignorando mayusculas y minusculas
 export function findUserByEmail(email: string): User | undefined {
   return loadUsers().find((u) => u.email.toLowerCase() === email.toLowerCase());
 }

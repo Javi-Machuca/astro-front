@@ -21,7 +21,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     );
   }
 
-  // Mismo mensaje para email inexistente y contraseña incorrecta (evita enumeración de usuarios)
+  // Busca el usuario y comprueba la contraseña; usa el mismo mensaje de error para ambos casos para evitar enumeracion de cuentas
   const user = findUserByEmail(email);
   if (!user || !verifyPassword(password, user.password)) {
     return new Response(
@@ -30,6 +30,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     );
   }
 
+  // Firma el JWT con los datos del usuario y lo almacena en una cookie httpOnly de 7 dias
   const token = signJWT({
     sub: user.id,
     email: user.email,

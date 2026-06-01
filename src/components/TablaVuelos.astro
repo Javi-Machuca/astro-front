@@ -247,7 +247,7 @@
   import type { EstadoTabla } from '../controllers/VuelosController';
   import { AEROPUERTOS } from '../lib/aeropuertos';
 
-  // Instancia del controlador MVC que gestiona carga, filtrado y paginación
+  // Instancia del controlador y referencias a todos los elementos del DOM que se actualizan en cada render
   const ctrl = new VuelosController();
   const sk = document.getElementById('tv-skeleton')!;
   const tabla = document.getElementById('tv-tabla')!;
@@ -358,7 +358,7 @@
     tabla.style.display = sinResultados ? 'none' : 'block';
     vacio.style.display = sinResultados ? 'block' : 'none';
 
-    // Muestra el contador de resultados cuando hay filtros activos
+      // Muestra el contador de resultados cuando hay filtros activos; lo oculta si no los hay
     if (hayFiltrosActivos() && !sinResultados) {
       filtrosResultado.style.display = 'flex';
       filtrosResultadoTxt.textContent = `${e.totalVuelos} resultado${e.totalVuelos !== 1 ? 's' : ''}`;
@@ -444,7 +444,7 @@
 
   ctrl.suscribir((e) => {
     render(e);
-    // Ajusta el rango del slider al precio máximo real una vez que los datos están disponibles
+      // Ajusta el rango del slider al precio maximo real una vez cargados los datos
     if (
       !e.cargando &&
       !e.error &&

@@ -2,7 +2,7 @@ import type { Vuelo, FiltrosVuelos } from '../models/Vuelo';
 import { obtenerVuelos, obtenerVuelosMock } from '../services/VuelosService';
 import { nombreAeropuerto } from '../lib/aeropuertos';
 
-// En modo mock se usan datos locales en lugar de llamar al proxy
+// Cuando PUBLIC_USE_MOCK es true se cargan datos locales sin llamar al proxy SAP
 const USE_MOCK = import.meta.env.PUBLIC_USE_MOCK === 'true';
 const ITEMS_POR_PAGINA = 5;
 
@@ -29,7 +29,7 @@ export class VuelosController {
     totalVuelos: 0,
   };
 
-  // `todos` guarda todos los vuelos cargados; `filtrados` los que pasan el filtro activo
+  // todos: lista completa descargada de SAP; filtrados: subconjunto visible tras aplicar los filtros activos
   private listeners: ListenerEstado[] = [];
   private todos: Vuelo[] = [];
   private filtrados: Vuelo[] = [];
@@ -39,7 +39,7 @@ export class VuelosController {
     precioMax?: number;
   } = {};
 
-  // Registra un listener que se llama cada vez que cambia el estado; devuelve función para desuscribirse
+  // Registra un callback que se ejecuta en cada cambio de estado; devuelve una funcion para cancelar la suscripcion
   suscribir(fn: ListenerEstado): () => void {
     this.listeners.push(fn);
     return () => {
@@ -93,7 +93,7 @@ export class VuelosController {
     this.set(this.paginar(this.filtrados, pagina));
   }
 
-  // Filtra los vuelos por origen, destino y precio máximo y resetea a la página 1
+  // Aplica los filtros de origen, destino y precio maximo sobre la lista completa y resetea a la pagina 1
   aplicarFiltros(f: { origen?: string; destino?: string; precioMax?: number }) {
     this.filtrosActivos = f;
     const q = (s?: string) => s?.trim().toLowerCase() ?? '';
@@ -119,7 +119,7 @@ export class VuelosController {
     this.set(this.paginar(this.filtrados, 1));
   }
 
-  // Devuelve el precio más alto y más bajo del conjunto completo de vuelos (para el slider de filtro)
+  // Devuelve el precio maximo y minimo del conjunto completo para configurar el rango del slider de filtro
   getPrecioMax() {
     return this.todos.length
       ? Math.max(...this.todos.map((v) => v.precio))

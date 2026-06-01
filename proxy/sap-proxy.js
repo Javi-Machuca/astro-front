@@ -23,7 +23,7 @@ const SAP_PASS = process.env.SAP_PASS;
 
 const SAP_SRV = `${SAP_BASE_URL}/sap/opu/odata/sap/${SAP_SERVICE}`;
 
-// Token OAuth en memoria; se renueva automáticamente 60s antes de su expiración
+// Token OAuth cacheado en memoria; se renueva automaticamente 60 segundos antes de su expiracion
 let cachedToken = null;
 let tokenExpiry = 0;
 
@@ -59,7 +59,7 @@ async function getOAuthToken() {
   return cachedToken;
 }
 
-// Construye las cabeceras comunes para todas las peticiones a SAP
+// Construye las cabeceras comunes (Authorization Bearer y Accept JSON) para cualquier peticion a SAP
 async function sapHeaders(extra = {}) {
   const token = await getOAuthToken();
   return {
@@ -74,7 +74,7 @@ app.use(express.json());
 
 const API_TOKEN = process.env.API_TOKEN;
 
-// Middleware que protege los endpoints con el token compartido del .env
+// Middleware de autorizacion: comprueba el Bearer token del header contra el valor del .env
 function requireToken(req, res, next) {
   const auth = req.headers['authorization'] || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
@@ -82,7 +82,7 @@ function requireToken(req, res, next) {
   res.status(401).json({ success: false, error: 'Token inválido o ausente.' });
 }
 
-// Endpoint de salud para verificar que el proxy está activo
+// Endpoint de salud para verificar que el servidor proxy esta activo
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 // Devuelve la lista de vuelos de SAP con filtros opcionales por fecha, origen y destino
@@ -121,7 +121,7 @@ app.get('/api/vuelos', async (req, res) => {
   }
 });
 
-// Stub de estadísticas (pendiente de implementar en SAP)
+// Endpoint de estadisticas pendiente de implementacion en SAP; devuelve valores vacios por ahora
 app.get('/api/estadisticas', (_req, res) => {
   res.json({ success: true, data: { asientosHoy: 0, buffersEnVivo: 0 } });
 });
@@ -150,7 +150,7 @@ app.get('/api/vuelos/:codigo', async (req, res) => {
   }
 });
 
-// Actualiza precio, capacidad o estado de un vuelo en SAP; requiere CSRF token
+// Actualiza precio, capacidad o estado de un vuelo en SAP; obtiene el CSRF token previamente con un HEAD
 app.patch('/api/vuelos/:vueloId', requireToken, async (req, res) => {
   try {
     const { vueloId } = req.params;
@@ -189,7 +189,7 @@ app.patch('/api/vuelos/:vueloId', requireToken, async (req, res) => {
   }
 });
 
-// Crea un nuevo vuelo en SAP con los datos del formulario admin
+// Crea un nuevo vuelo en SAP mapeando los campos del formulario al formato OData del servicio
 app.post('/api/vuelos', requireToken, async (req, res) => {
   try {
     const { codigoVuelo, origen, destino, fechaSalida, fechaLlegada, horaLlegada, precio, capacidad, estado } = req.body;
@@ -297,7 +297,7 @@ app.delete('/api/admin/reservas/:idCarrito', requireToken, async (req, res) => {
   }
 });
 
-// Llama al function import `reservar` de SAP para crear una reserva en ZCARRITO_JMG
+// Llama al function import OData `reservar` de SAP para crear una entrada en ZCARRITO_JMG
 app.post('/api/reservas', requireToken, async (req, res) => {
   try {
     const { vueloId, nombre, dni, edad, cantidad = 1 } = req.body;
@@ -306,7 +306,7 @@ app.post('/api/reservas', requireToken, async (req, res) => {
         .status(400)
         .json({ success: false, error: 'vueloId es requerido' });
 
-    // Obtener CSRF token desde la raíz del servicio
+    // Obtiene el CSRF token con un HEAD a la raiz del servicio antes de enviar el POST
     const csrfRes = await fetch(`${SAP_SRV}/?sap-client=${SAP_CLIENT}`, {
       method: 'HEAD',
       headers: { ...(await sapHeaders()), 'X-CSRF-Token': 'Fetch' },
@@ -315,7 +315,7 @@ app.post('/api/reservas', requireToken, async (req, res) => {
     const rawCookies = csrfRes.headers.getSetCookie?.() ?? [];
     const cookies = rawCookies.map((c) => c.split(';')[0]).join('; ');
 
-    // OData v2: strings van entre comillas simples en los parámetros
+    // En OData v2 los parametros de tipo string se pasan entre comillas simples en la URL
     const url = `${SAP_SRV}/reservar?sap-client=${SAP_CLIENT}&vuelo_id='${vueloId}'&cantidad=${cantidad}&nombre='${encodeURIComponent(nombre)}'&dni='${dni}'&edad='${edad}'`;
     const createRes = await fetch(url, {
       method: 'POST',
@@ -337,7 +337,7 @@ app.post('/api/reservas', requireToken, async (req, res) => {
   }
 });
 
-// Convierte un registro OData de SAP al modelo de dominio Vuelo
+// Transforma un registro OData de SAP al modelo de dominio del frontend, convirtiendo tipos y campos
 function transformarVuelo(sap) {
   if (!sap) return null;
   return {
@@ -355,7 +355,7 @@ function transformarVuelo(sap) {
   };
 }
 
-// Convierte una fecha ISO 8601 al formato /Date(ms)/ de OData v2
+// Convierte una fecha ISO 8601 al formato /Date(ms)/ requerido por OData v2
 function toSapDate(iso) {
   if (!iso) return null;
   return `/Date(${new Date(iso).getTime()})/`;
@@ -368,7 +368,7 @@ function parseSapDate(val) {
   return m ? new Date(Number(m[1])).toISOString() : val;
 }
 
-// Inicia el servidor Express
+// Inicia el servidor Express y muestra la configuracion de conexion a SAP en consola
 app.listen(PORT, () => {
   console.log(`\n🛫  SAP Proxy → http://localhost:${PORT}`);
   console.log(`   SAP: ${SAP_BASE_URL}`);

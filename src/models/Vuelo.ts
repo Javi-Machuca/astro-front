@@ -1,4 +1,4 @@
-// Modelos de dominio y utilidades de formato/negocio para vuelos y pasajeros
+// Interfaces de dominio y funciones de formato y reglas de negocio para vuelos y pasajeros
 
 export interface Vuelo {
   vueloId: string;

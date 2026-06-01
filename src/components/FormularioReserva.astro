@@ -159,7 +159,7 @@
         return;
       }
 
-      // Recoger pasajeros
+      // Extrae los valores de nombre, DNI y edad de los inputs generados dinamicamente
       const nombres = Array.from(
         listaPax.querySelectorAll<HTMLInputElement>('.pax-nombre')
       ).map((i) => i.value.trim());
@@ -170,7 +170,7 @@
         listaPax.querySelectorAll<HTMLInputElement>('.pax-edad')
       ).map((i) => (i.value.trim() === '' ? NaN : parseInt(i.value, 10)));
 
-      // Validar
+      // Verifica que todos los campos de nombre, DNI y edad de cada pasajero esten completos y sean validos
       const invalido = nombres.some(
         (n, i) => !n || !dnis[i] || isNaN(edades[i]) || edades[i] < 0
       );
