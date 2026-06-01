@@ -196,7 +196,7 @@ astro-front/
 ├── proxy/                      # Proxy Express.js → SAP BTP OData v2
 │   └── sap-proxy.js
 ├── src/
-│   ├── components/             # Componentes Astro reutilizables (Vista)
+│   ├── view/             # Componentes Astro reutilizables (Vista)
 │   │   ├── TablaVuelos.astro
 │   │   ├── FormularioReserva.astro
 │   │   └── PopupConfirmacion.astro
@@ -258,9 +258,9 @@ Renderiza la interfaz sin contener lógica de negocio.
 
 | Archivo | Responsabilidad |
 |---|---|
-| `src/components/TablaVuelos.astro` | Tabla de vuelos con filtros y paginación |
-| `src/components/FormularioReserva.astro` | Formulario de reserva por pasos |
-| `src/components/PopupConfirmacion.astro` | Popup de confirmación de reserva |
+| `src/view/TablaVuelos.astro` | Tabla de vuelos con filtros y paginación |
+| `src/view/FormularioReserva.astro` | Formulario de reserva por pasos |
+| `src/view/PopupConfirmacion.astro` | Popup de confirmación de reserva |
 | `src/layouts/Layout.astro` | Plantilla base con navegación |
 | `src/pages/index.astro` | Página principal de vuelos |
 | `src/pages/carrito.astro` | Carrito de reservas |
