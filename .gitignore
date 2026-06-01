@@ -23,8 +23,5 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# claude code
-.claude/
-
 # windows
 Thumbs.db
